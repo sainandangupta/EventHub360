@@ -1,0 +1,135 @@
+const employeeRepository = require('../repositories/employeeRepository');
+const auditLogger = require('../utils/auditLogger');
+
+const employeeService = {
+  // Create employee
+  async createEmployee(userId, data, performedBy) {
+    const { department_id, phone, address, designation, salary, skills } = data;
+    const employee = await employeeRepository.createEmployee(
+      userId,
+      department_id,
+      phone,
+      address,
+      designation,
+      salary
+    );
+
+    if (skills && skills.length > 0) {
+      await employeeRepository.addEmployeeSkills(employee.id, skills);
+    }
+
+    // Write audit log
+    await auditLogger.log('employee_profiles', 'INSERT', employee.id, null, employee, performedBy);
+
+    return employee;
+  },
+
+  // Get all employees
+  async getAllEmployees() {
+    return employeeRepository.getAllEmployees();
+  },
+
+  // Get employee by ID
+  async getEmployeeById(id) {
+    const employee = await employeeRepository.getEmployeeById(id);
+    if (!employee) return null;
+
+    const skills = await employeeRepository.getEmployeeSkills(id);
+    const images = await employeeRepository.getEmployeeImages(id);
+
+    return {
+      ...employee,
+      skills,
+      images
+    };
+  },
+
+  // Update employee
+  async updateEmployee(id, data, performedBy) {
+    // Fetch old data for audit trail
+    const oldEmployee = await employeeRepository.getEmployeeById(id);
+    if (!oldEmployee) {
+      throw new Error('Employee profile not found');
+    }
+
+    const { department_id, phone, address, designation, salary, skills } = data;
+    const updatedEmployee = await employeeRepository.updateEmployee(
+      id,
+      department_id,
+      phone,
+      address,
+      designation,
+      salary
+    );
+
+    // Update skills: delete old and insert new
+    await employeeRepository.deleteEmployeeSkills(id);
+    if (skills && skills.length > 0) {
+      await employeeRepository.addEmployeeSkills(id, skills);
+    }
+
+    // Clean old/new representations for audit logger
+    const oldData = {
+      department_id: oldEmployee.department_id,
+      phone: oldEmployee.phone,
+      address: oldEmployee.address,
+      designation: oldEmployee.designation,
+      salary: oldEmployee.salary
+    };
+
+    const newData = {
+      department_id: updatedEmployee.department_id,
+      phone: updatedEmployee.phone,
+      address: updatedEmployee.address,
+      designation: updatedEmployee.designation,
+      salary: updatedEmployee.salary
+    };
+
+    // Log the JSONB difference in audit trail
+    await auditLogger.log('employee_profiles', 'UPDATE', id, oldData, newData, performedBy);
+
+    return updatedEmployee;
+  },
+
+  // Delete employee
+  async deleteEmployee(id, performedBy) {
+    const oldEmployee = await employeeRepository.getEmployeeById(id);
+    if (!oldEmployee) {
+      throw new Error('Employee profile not found');
+    }
+
+    // Delete relationships
+    await employeeRepository.deleteEmployeeSkills(id);
+    await employeeRepository.deleteEmployeeImages(id);
+    
+    // Delete profile
+    const deletedEmployee = await employeeRepository.deleteEmployee(id);
+
+    // Write audit log
+    await auditLogger.log('employee_profiles', 'DELETE', id, oldEmployee, null, performedBy);
+
+    return deletedEmployee;
+  },
+
+  // Upload employee images
+  async uploadImages(employeeId, files) {
+    if (!files || files.length === 0) {
+      throw new Error('No files provided');
+    }
+
+    const savedImages = [];
+    for (let file of files) {
+      const img = await employeeRepository.uploadEmployeeImage(employeeId, file.filename);
+      savedImages.push(img);
+    }
+
+    return savedImages;
+  },
+
+  // Get dashboard statistics
+  async getDashboardStats() {
+    return employeeRepository.getDashboardStats();
+  }
+};
+
+module.exports = employeeService;

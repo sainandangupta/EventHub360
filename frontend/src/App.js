@@ -20,6 +20,11 @@ import MyLeaves from './pages/leave/MyLeaves';
 import LeaveApprovals from './pages/leave/LeaveApprovals';
 import LeaveBalance from './pages/leave/LeaveBalance';
 import LeaveReports from './pages/leave/LeaveReports';
+import AssetsList from './pages/AssetsList';
+import AssetDetail from './pages/AssetDetail';
+import NotificationsList from './pages/NotificationsList';
+import AuditLogs from './pages/AuditLogs';
+import ReportsDashboard from './pages/ReportsDashboard';
 
 function App() {
   return (
@@ -33,7 +38,6 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/verify-email/:token" element={<EmailVerification />} />
             
-            {/* Protected - All authenticated users */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/employees" element={<EmployeeList />} />
@@ -44,6 +48,10 @@ function App() {
               <Route path="/skills" element={<SkillsMaster />} />
               <Route path="/leave/my-leaves" element={<MyLeaves />} />
               <Route path="/leave/balance" element={<LeaveBalance />} />
+              <Route path="/assets" element={<AssetsList />} />
+              <Route path="/assets/:id" element={<AssetDetail />} />
+              <Route path="/notifications" element={<NotificationsList />} />
+              <Route path="/reports" element={<ReportsDashboard />} />
             </Route>
 
             {/* Protected - Employee & Manager can apply */}
@@ -64,6 +72,7 @@ function App() {
             {/* Protected - Admin only */}
             <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/audit-logs" element={<AuditLogs />} />
             </Route>
           </Routes>
         </BrowserRouter>

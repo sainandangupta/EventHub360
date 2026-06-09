@@ -6,16 +6,23 @@ const navSections = [
     title: 'Main',
     items: [
       { label: 'Dashboard', icon: '📊', path: '/dashboard', roles: ['user', 'manager', 'hr', 'admin'] },
+      { label: 'Notifications', icon: '🔔', path: '/notifications', roles: ['user', 'manager', 'hr', 'admin'] },
     ]
   },
   {
     title: 'Leave Management',
     items: [
       { label: 'Apply Leave', icon: '✏️', path: '/leave/apply', roles: ['user', 'manager'] },
-      { label: 'My Leaves', icon: '📅', path: '/leave/history', roles: ['user', 'manager', 'hr', 'admin'] },
+      { label: 'My Leaves', icon: '📅', path: '/leave/my-leaves', roles: ['user', 'manager', 'hr', 'admin'] },
       { label: 'Leave Balance', icon: '📈', path: '/leave/balance', roles: ['user', 'manager', 'hr', 'admin'] },
-      { label: 'Pending Approvals', icon: '✅', path: '/leave/approvals', roles: ['manager', 'hr'] },
+      { label: 'Pending Approvals', icon: '✅', path: '/leave/pending', roles: ['manager', 'hr'] },
       { label: 'Leave Reports', icon: '📑', path: '/leave/reports', roles: ['hr', 'admin'] },
+    ]
+  },
+  {
+    title: 'Asset Management',
+    items: [
+      { label: 'Assets Master', icon: '📦', path: '/assets', roles: ['user', 'manager', 'hr', 'admin'] },
     ]
   },
   {
@@ -27,10 +34,16 @@ const navSections = [
     ]
   },
   {
+    title: 'Reports & Analytics',
+    items: [
+      { label: 'ERP Reports Hub', icon: '📑', path: '/reports', roles: ['user', 'manager', 'hr', 'admin'] },
+    ]
+  },
+  {
     title: 'Administration',
     items: [
       { label: 'Admin Dashboard', icon: '⚙️', path: '/admin', roles: ['admin'] },
-      { label: 'User Management', icon: '🔑', path: '/admin/users', roles: ['admin'] },
+      { label: 'Audit Trail', icon: '🔑', path: '/audit-logs', roles: ['admin'] },
     ]
   },
 ];

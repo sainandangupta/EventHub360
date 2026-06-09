@@ -1,9 +1,26 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { StatCard, Card, Button } from "../components/ui";
+import { StatCard, Button } from "../components/ui";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar
+} from "recharts";
 
-function Dashboard() {
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
+
+export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
@@ -28,22 +45,26 @@ function Dashboard() {
     axios.get("http://localhost:5000/api/user/profile", { headers })
       .then((res) => {
         setUser(res.data);
-        setLoading(false);
       })
       .catch((err) => {
         setError(err.response?.data?.message || "Failed to load profile data.");
-        setLoading(false);
       });
 
-    // Fetch employee stats
-    axios.get("http://localhost:5000/api/employees/stats", { headers })
+    // Fetch employee dashboard stats (which now includes assets and chart distributions)
+    axios.get("http://localhost:5000/api/employees/stats/dashboard", { headers })
       .then(res => setStats(res.data))
-      .catch(err => console.log(err));
+      .catch(err => console.log("Stats Fetch Error:", err));
 
     // Fetch leave dashboard stats
     axios.get("http://localhost:5000/api/leave/dashboard-stats", { headers })
-      .then(res => setLeaveStats(res.data))
-      .catch(err => console.log(err));
+      .then(res => {
+        setLeaveStats(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.log("Leave Stats Fetch Error:", err);
+        setLoading(false);
+      });
   }, []);
 
   const handleLogout = () => {
@@ -54,11 +75,9 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="page-container">
-        <div className="loader-fullpage">
-          <div className="loader loader-lg"></div>
-          <p className="loader-text">Loading your dashboard...</p>
-        </div>
+      <div style={{ padding: "80px", textAlign: "center", color: 'var(--text-secondary)' }}>
+        <div className="loading-spinner" style={{ display: 'inline-block', width: '2rem', height: '2rem', border: '3px solid var(--border-color)', borderTop: '3px solid var(--color-primary-light)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <div style={{ marginTop: '0.5rem' }}>Loading your dashboard...</div>
       </div>
     );
   }
@@ -73,116 +92,186 @@ function Dashboard() {
     );
   }
 
+  // Formatting chart data
+  const deptData = stats?.department_distribution || [];
+  const hiringTrendData = stats?.hiring_trend || [];
+  
+  const leaveDistributionData = leaveStats ? [
+    { name: "Pending", count: leaveStats.pending || 0, fill: "#FFBB28" },
+    { name: "Approved", count: leaveStats.approved || 0, fill: "#28a745" },
+    { name: "Rejected", count: leaveStats.rejected || 0, fill: "#dc3545" },
+    { name: "Cancelled", count: leaveStats.cancelled || 0, fill: "#6c757d" }
+  ] : [];
+
+  const assetDistributionData = stats ? [
+    { name: "Allocated", count: stats.allocated_assets || 0, fill: "#FF8042" },
+    { name: "Available", count: (stats.total_assets || 0) - (stats.allocated_assets || 0), fill: "#00C49F" }
+  ] : [];
+
   return (
-    <div className="page-container">
-      {/* Welcome Section */}
-      <div className="page-header">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
-          <div>
-            <h1 className="page-title">Welcome back, {user?.name}! 👋</h1>
-            <p className="page-subtitle">
-              <span className="status-badge badge-manager-approved" style={{ marginRight: "0.5rem" }}>
-                {(user?.role || "user").toUpperCase()}
-              </span>
-              {user?.verified ? "✅ Verified" : "⏳ Unverified"} • Member since {new Date(user?.created_at).toLocaleDateString()}
-            </p>
-          </div>
+    <div className="page-container" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      
+      {/* Welcome Header */}
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 className="page-title" style={{ fontSize: '2rem', fontWeight: '800' }}>Welcome back, {user?.name}! 👋</h1>
+          <p className="page-subtitle" style={{ color: 'var(--text-secondary)' }}>
+            <span className="status-badge badge-manager-approved" style={{ marginRight: "0.5rem", padding: '0.2rem 0.5rem', backgroundColor: 'var(--color-primary)', color: 'white', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+              {(user?.role || "user").toUpperCase()}
+            </span>
+            {user?.verified ? "✅ Verified Employee" : "⏳ Unverified"} • Last login: {user?.last_login ? new Date(user.last_login).toLocaleString() : "First Session"}
+          </p>
         </div>
       </div>
 
-      {/* Profile Card */}
-      <Card className="profile-card" style={{ marginBottom: "2rem" }}>
-        <div className="card-body">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem" }}>
-            <div>
-              <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>📧 Email</span>
-              <p style={{ fontWeight: 600, color: "var(--text-primary)", margin: "0.25rem 0" }}>{user?.email}</p>
-            </div>
-            <div>
-              <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>👤 Role</span>
-              <p style={{ fontWeight: 600, color: "var(--color-primary-light)", margin: "0.25rem 0", textTransform: "capitalize" }}>{user?.role || "User"}</p>
-            </div>
-            <div>
-              <span style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>🕐 Last Login</span>
-              <p style={{ fontWeight: 600, color: "var(--text-primary)", margin: "0.25rem 0" }}>
-                {user?.last_login ? new Date(user.last_login).toLocaleString() : "First login"}
-              </p>
-            </div>
-          </div>
+      {/* Main KPI Stats Row */}
+      <div>
+        <h2 style={{ color: "var(--text-primary)", marginBottom: "1rem", fontSize: "1.25rem", fontWeight: '700' }}>📊 Enterprise Statistics</h2>
+        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+          <StatCard icon="👥" title="Total Employees" value={stats?.total_employees || 0} color="#0088FE" />
+          <StatCard icon="🏢" title="Departments" value={stats?.total_departments || 0} color="#00C49F" />
+          <StatCard icon="📦" title="Total Assets" value={stats?.total_assets || 0} color="#FFBB28" />
+          <StatCard icon="🤝" title="Allocated Assets" value={stats?.allocated_assets || 0} color="#FF8042" />
+          <StatCard icon="⏳" title="Pending Leaves" value={leaveStats?.pending || 0} color="#dc3545" />
         </div>
-      </Card>
-
-      {/* System Statistics */}
-      <h2 style={{ color: "var(--text-primary)", marginBottom: "1rem", fontSize: "1.25rem" }}>📊 System Overview</h2>
-      <div className="stats-grid" style={{ marginBottom: "2rem" }}>
-        <StatCard icon="👥" title="Total Employees" value={stats?.total_employees || 0} color="var(--color-primary)" />
-        <StatCard icon="🏢" title="Departments" value={stats?.total_departments || 0} color="var(--color-accent)" />
-        {leaveStats && (
-          <>
-            <StatCard icon="📝" title="Leave Requests" value={leaveStats.total || 0} color="var(--color-info)" />
-            <StatCard icon="⏳" title="Pending Approvals" value={leaveStats.pending || 0} color="var(--color-warning)" />
-            <StatCard icon="✅" title="Approved Leaves" value={leaveStats.approved || 0} color="var(--color-success)" />
-            <StatCard icon="❌" title="Rejected Leaves" value={leaveStats.rejected || 0} color="var(--color-danger)" />
-          </>
-        )}
       </div>
 
-      {/* Quick Actions */}
-      <h2 style={{ color: "var(--text-primary)", marginBottom: "1rem", fontSize: "1.25rem" }}>⚡ Quick Actions</h2>
-      <div className="quick-actions" style={{ marginBottom: "2rem" }}>
-        {(currentUser.role === "user" || currentUser.role === "manager") && (
-          <Button variant="primary" onClick={() => navigate("/leave/apply")}>📝 Apply Leave</Button>
-        )}
-        <Button variant="secondary" onClick={() => navigate("/leave/my-leaves")}>📋 My Leaves</Button>
-        <Button variant="secondary" onClick={() => navigate("/leave/balance")}>💰 My Balance</Button>
-        <Button variant="secondary" onClick={() => navigate("/employees")}>👥 Employees</Button>
+      {/* Charts Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
         
-        {(currentUser.role === "manager" || currentUser.role === "hr") && (
-          <Button variant="success" onClick={() => navigate("/leave/pending")}>
-            ✓ Pending Approvals {leaveStats?.pending > 0 && `(${leaveStats.pending})`}
-          </Button>
-        )}
-        {(currentUser.role === "hr" || currentUser.role === "admin") && (
-          <Button variant="primary" onClick={() => navigate("/leave/reports")}>📊 Leave Reports</Button>
-        )}
-        {currentUser.role === "admin" && (
-          <Button variant="danger" onClick={() => navigate("/admin")}>⚙️ Admin Dashboard</Button>
-        )}
+        {/* Hiring Trend Line/Area Chart */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>📈 Monthly Hiring Trend</h3>
+          <div style={{ width: '100%', height: '280px' }}>
+            {hiringTrendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={hiringTrendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorHiring" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="month" stroke="var(--text-secondary)" fontSize={12} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={12} allowDecimals={false} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+                  <Area type="monotone" dataKey="count" name="Employees Hired" stroke="#8884d8" fillOpacity={1} fill="url(#colorHiring)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No hiring data recorded yet.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Department Distribution Pie Chart */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>🏢 Department Distribution</h3>
+          <div style={{ width: '100%', height: '280px' }}>
+            {deptData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={deptData}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="count"
+                  >
+                    {deptData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+                  <Legend verticalAlign="bottom" height={36} formatter={(value, entry) => <span style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{value} ({entry.payload.count})</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No department metrics.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Leave Distribution Bar Chart */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>📝 Leave Requests Overview</h3>
+          <div style={{ width: '100%', height: '280px' }}>
+            {leaveStats && leaveStats.total > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={leaveDistributionData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={12} allowDecimals={false} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+                  <Bar dataKey="count" name="Applications" radius={[4, 4, 0, 0]}>
+                    {leaveDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No leave records.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Asset Distribution Bar Chart */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>📦 Asset Allocation Overview</h3>
+          <div style={{ width: '100%', height: '280px' }}>
+            {stats && stats.total_assets > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={assetDistributionData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={12} allowDecimals={false} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+                  <Bar dataKey="count" name="Assets" radius={[4, 4, 0, 0]}>
+                    {assetDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No assets registered.</div>
+            )}
+          </div>
+        </div>
+
       </div>
 
-      {/* Role-specific Cards */}
-      {currentUser.role === "manager" && leaveStats?.pending > 0 && (
-        <Card accentColor="var(--color-warning)" style={{ marginBottom: "1.5rem" }}>
-          <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <h3 style={{ color: "var(--color-warning)", margin: 0 }}>⚠️ Pending for Your Approval</h3>
-              <p style={{ color: "var(--text-secondary)", margin: "0.25rem 0 0" }}>
-                You have {leaveStats.pending} leave request(s) waiting for your review
-              </p>
-            </div>
-            <Button variant="primary" onClick={() => navigate("/leave/pending")}>Review Now</Button>
-          </div>
-        </Card>
-      )}
+      {/* Quick Action Hub */}
+      <div>
+        <h2 style={{ color: "var(--text-primary)", marginBottom: "1rem", fontSize: "1.25rem", fontWeight: '700' }}>⚡ Core Workspace Actions</h2>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {(currentUser.role === "user" || currentUser.role === "manager") && (
+            <Button variant="primary" onClick={() => navigate("/leave/apply")}>✏️ Apply for Leave</Button>
+          )}
+          <Button variant="secondary" onClick={() => navigate("/leave/my-leaves")}>📋 My Leaves</Button>
+          <Button variant="secondary" onClick={() => navigate("/leave/balance")}>💰 Leave Balance</Button>
+          <Button variant="secondary" onClick={() => navigate("/employees")}>👥 Employee Profiles</Button>
+          <Button variant="secondary" onClick={() => navigate("/assets")}>📦 Asset Master</Button>
+          <Button variant="secondary" onClick={() => navigate("/reports")}>📑 Reporting & Search</Button>
+          
+          {(currentUser.role === "manager" || currentUser.role === "hr") && (
+            <Button variant="success" onClick={() => navigate("/leave/pending")}>
+              ✓ Pending Approvals {leaveStats?.pending > 0 && `(${leaveStats.pending})`}
+            </Button>
+          )}
+          {currentUser.role === "admin" && (
+            <>
+              <Button variant="danger" onClick={() => navigate("/admin")}>⚙️ User Accounts</Button>
+              <Button variant="secondary" style={{ backgroundColor: 'var(--color-primary-dark)', color: 'white', border: 'none' }} onClick={() => navigate("/audit-logs")}>🔑 Audit Trail</Button>
+            </>
+          )}
+        </div>
+      </div>
 
-      {currentUser.role === "hr" && (
-        <Card accentColor="var(--color-info)" style={{ marginBottom: "1.5rem" }}>
-          <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <h3 style={{ color: "var(--color-info)", margin: 0 }}>📊 HR Dashboard</h3>
-              <p style={{ color: "var(--text-secondary)", margin: "0.25rem 0 0" }}>
-                Review pending approvals and generate leave reports
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button variant="success" onClick={() => navigate("/leave/pending")}>Approvals</Button>
-              <Button variant="primary" onClick={() => navigate("/leave/reports")}>Reports</Button>
-            </div>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }
-
-export default Dashboard;

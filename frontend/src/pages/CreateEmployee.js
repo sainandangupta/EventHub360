@@ -1,7 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import FormInput from "../components/ui/FormInput";
+import FormSelect from "../components/ui/FormSelect";
 
-function CreateEmployee() {
+export default function CreateEmployee() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     phone: "",
     address: "",
@@ -21,15 +25,15 @@ function CreateEmployee() {
 
   useEffect(() => {
     // Fetch departments
-    axios.get("http://localhost:5000/api/departments")
+    axios.get("http://localhost:5000/api/departments", { headers: { Authorization: token } })
       .then(res => setDepartments(res.data))
       .catch(err => console.error(err));
 
     // Fetch skills
-    axios.get("http://localhost:5000/api/skills")
+    axios.get("http://localhost:5000/api/skills", { headers: { Authorization: token } })
       .then(res => setAllSkills(res.data))
       .catch(err => console.error(err));
-  }, []);
+  }, [token]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -85,110 +89,139 @@ function CreateEmployee() {
       }
 
       alert("Employee created successfully!");
-      window.location.href = "/employees";
+      navigate("/employees");
     } catch (err) {
       setError(err.response?.data?.message || "Error creating employee");
       setLoading(false);
     }
   };
 
+  const departmentOptions = departments.map(dept => ({
+    value: dept.id,
+    label: dept.department_name
+  }));
+
   return (
-    <div style={{ maxWidth: "600px", margin: "50px auto", padding: "20px", border: "1px solid #ccc", borderRadius: "8px" }}>
-      <h2>➕ Create Employee Profile</h2>
-      
-      {error && <div style={{ color: "red", marginBottom: "10px" }}>⚠️ {error}</div>}
+    <div className="card-container" style={{ maxWidth: "650px", margin: "2rem auto", padding: "2.5rem", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", backgroundColor: "var(--bg-secondary)", boxShadow: "var(--shadow-lg)" }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+        <span style={{ fontSize: '2rem' }}>👥</span>
+        <h2 style={{ fontSize: "1.75rem", fontWeight: "700", color: "var(--text-primary)" }}>Create Employee Profile</h2>
+      </div>
+
+      {error && (
+        <div style={{ padding: "1rem", backgroundColor: "rgba(220, 53, 69, 0.1)", border: "1px solid var(--color-danger-light)", borderRadius: "var(--radius-md)", color: "var(--color-danger-light)", marginBottom: "1.5rem", display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span>⚠️</span>
+          <span>{error}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="phone"
-          placeholder="Phone Number"
-          value={form.phone}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
-        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <FormInput
+            label="Phone Number"
+            name="phone"
+            type="text"
+            placeholder="e.g. +1234567890"
+            value={form.phone}
+            onChange={handleChange}
+            required
+          />
 
-        <input
-          type="text"
+          <FormInput
+            label="Salary"
+            name="salary"
+            type="number"
+            placeholder="e.g. 65000"
+            value={form.salary}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <FormInput
+          label="Address"
           name="address"
-          placeholder="Address"
+          type="text"
+          placeholder="e.g. 123 Main St, New York, NY"
           value={form.address}
           onChange={handleChange}
           required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
         />
 
-        <input
-          type="text"
-          name="designation"
-          placeholder="Designation (e.g., Developer, Manager)"
-          value={form.designation}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
-        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <FormInput
+            label="Designation"
+            name="designation"
+            type="text"
+            placeholder="e.g. Software Engineer"
+            value={form.designation}
+            onChange={handleChange}
+            required
+          />
 
-        <input
-          type="number"
-          name="salary"
-          placeholder="Salary"
-          value={form.salary}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
-        />
-
-        <select
-          name="department_id"
-          value={form.department_id}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
-        >
-          <option value="">-- Select Department --</option>
-          {departments.map(dept => (
-            <option key={dept.id} value={dept.id}>{dept.department_name}</option>
-          ))}
-        </select>
-
-        <div style={{ marginBottom: "10px", padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px" }}>Select Skills:</label>
-          {allSkills.map(skill => (
-            <label key={skill.id} style={{ display: "block", marginBottom: "5px" }}>
-              <input
-                type="checkbox"
-                checked={skills.includes(skill.id)}
-                onChange={() => handleSkillChange(skill.id)}
-                style={{ marginRight: "5px" }}
-              />
-              {skill.skill_name}
-            </label>
-          ))}
+          <FormSelect
+            label="Department"
+            name="department_id"
+            placeholder="-- Select Department --"
+            options={departmentOptions}
+            value={form.department_id}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        <div style={{ marginBottom: "10px" }}>
-          <label style={{ fontWeight: "bold", display: "block", marginBottom: "5px" }}>Upload Images (Max 5):</label>
+        {/* Skills checklist */}
+        <div style={{ marginBottom: "1.5rem", padding: "1.25rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: 'var(--bg-primary)' }}>
+          <label style={{ fontWeight: "700", display: "block", marginBottom: "0.75rem", color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Skills</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            {allSkills.map(skill => (
+              <label key={skill.id} style={{ display: "flex", alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                <input
+                  type="checkbox"
+                  checked={skills.includes(skill.id)}
+                  onChange={() => handleSkillChange(skill.id)}
+                  style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
+                />
+                {skill.skill_name}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Image upload */}
+        <div style={{ marginBottom: "2rem" }}>
+          <label style={{ fontWeight: "600", display: "block", marginBottom: "0.5rem", color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Upload Images / Document Proofs</label>
           <input
             type="file"
             multiple
             onChange={handleImageChange}
             accept="image/*,.pdf"
-            style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid #ddd" }}
+            style={{ width: "100%", padding: "0.5rem", borderRadius: "var(--radius-md)", border: "1px dashed var(--border-color)", backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
           />
-          <small>Allowed: JPG, PNG, PDF (Max 5 files, 5MB each)</small>
+          <small style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'block', marginTop: '0.25rem' }}>Allowed formats: JPG, PNG, PDF (Max 5 files, 5MB each)</small>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ width: "100%", padding: "10px", backgroundColor: "#28a745", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}
-        >
-          {loading ? "Creating..." : "Create Employee"}
-        </button>
+        {/* Submit Actions */}
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-primary"
+            style={{ flex: 1, padding: "0.75rem", backgroundColor: "var(--color-primary-light)", color: "white", border: "none", borderRadius: "var(--radius-md)", cursor: "pointer", fontWeight: "700", fontSize: '1rem', transition: 'background-color 0.2s' }}
+          >
+            {loading ? "Creating..." : "Create Employee"}
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => navigate("/employees")}
+            className="btn btn-secondary"
+            style={{ padding: "0.75rem 1.5rem", backgroundColor: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", cursor: "pointer", fontWeight: "600", transition: 'background-color 0.2s, color 0.2s' }}
+          >
+            Cancel
+          </button>
+        </div>
       </form>
     </div>
   );
 }
-
-export default CreateEmployee;

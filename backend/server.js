@@ -14,6 +14,10 @@ const departmentRoutes = require("./routes/departmentRoutes");
 const skillRoutes = require("./routes/skillRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
 const leaveRoutes = require("./routes/leaveRoutes");
+const assetRoutes = require("./routes/assetRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const auditRoutes = require("./routes/auditRoutes");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 app.use(cors());
@@ -39,6 +43,9 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/leave", leaveRoutes);
+app.use("/api/assets", assetRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/audit-logs", auditRoutes);
 
 // Swagger API docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -46,8 +53,11 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Serve uploads folder
 app.use("/uploads", express.static("uploads"));
 
+// Centered Error Handling Middleware
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 5000;
 console.log("Swagger docs available at http://localhost:5000/api-docs");
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-});
+});

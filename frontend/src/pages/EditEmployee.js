@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import FormInput from "../components/ui/FormInput";
+import FormSelect from "../components/ui/FormSelect";
 
-function EditEmployee() {
+export default function EditEmployee() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     phone: "",
     address: "",
@@ -44,12 +47,12 @@ function EditEmployee() {
       });
 
     // Fetch departments
-    axios.get("http://localhost:5000/api/departments")
+    axios.get("http://localhost:5000/api/departments", { headers: { Authorization: token } })
       .then(res => setDepartments(res.data))
       .catch(err => console.error(err));
 
     // Fetch skills
-    axios.get("http://localhost:5000/api/skills")
+    axios.get("http://localhost:5000/api/skills", { headers: { Authorization: token } })
       .then(res => setAllSkills(res.data))
       .catch(err => console.error(err));
   }, [id, token]);
@@ -81,106 +84,121 @@ function EditEmployee() {
       );
 
       alert("Employee updated successfully!");
-      window.location.href = "/employees";
+      navigate("/employees");
     } catch (err) {
       setError(err.response?.data?.message || "Error updating employee");
       setLoading(false);
     }
   };
 
-  if (loading) return <div style={{ padding: "40px", textAlign: "center" }}>🔄 Loading...</div>;
-  if (error) return <div style={{ padding: "40px", textAlign: "center", color: "red" }}>⚠️ {error}</div>;
+  if (loading) return <div style={{ padding: "80px", textAlign: "center", color: 'var(--text-secondary)' }}>
+    <div className="loading-spinner" style={{ display: 'inline-block', width: '2rem', height: '2rem', border: '3px solid var(--border-color)', borderTop: '3px solid var(--color-primary-light)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+    <div style={{ marginTop: '0.5rem' }}>Loading employee data...</div>
+  </div>;
+
+  if (error) return <div style={{ padding: "40px", textAlign: "center", color: "var(--color-danger-light)" }}>⚠️ {error}</div>;
+
+  const departmentOptions = departments.map(dept => ({
+    value: dept.id,
+    label: dept.department_name
+  }));
 
   return (
-    <div style={{ maxWidth: "600px", margin: "50px auto", padding: "20px", border: "1px solid #ccc", borderRadius: "8px" }}>
-      <h2>✏️ Edit Employee: {employee?.name}</h2>
+    <div className="card-container" style={{ maxWidth: "650px", margin: "2rem auto", padding: "2.5rem", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-color)", backgroundColor: "var(--bg-secondary)", boxShadow: "var(--shadow-lg)" }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+        <span style={{ fontSize: '2rem' }}>✏️</span>
+        <h2 style={{ fontSize: "1.75rem", fontWeight: "700", color: "var(--text-primary)" }}>Edit Employee: {employee?.name}</h2>
+      </div>
 
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="phone"
-          placeholder="Phone Number"
-          value={form.phone}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
-        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <FormInput
+            label="Phone Number"
+            name="phone"
+            type="text"
+            value={form.phone}
+            onChange={handleChange}
+            required
+          />
 
-        <input
-          type="text"
+          <FormInput
+            label="Salary"
+            name="salary"
+            type="number"
+            value={form.salary}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <FormInput
+          label="Address"
           name="address"
-          placeholder="Address"
+          type="text"
           value={form.address}
           onChange={handleChange}
           required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
         />
 
-        <input
-          type="text"
-          name="designation"
-          placeholder="Designation"
-          value={form.designation}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
-        />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <FormInput
+            label="Designation"
+            name="designation"
+            type="text"
+            value={form.designation}
+            onChange={handleChange}
+            required
+          />
 
-        <input
-          type="number"
-          name="salary"
-          placeholder="Salary"
-          value={form.salary}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
-        />
-
-        <select
-          name="department_id"
-          value={form.department_id}
-          onChange={handleChange}
-          required
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd", boxSizing: "border-box" }}
-        >
-          <option value="">-- Select Department --</option>
-          {departments.map(dept => (
-            <option key={dept.id} value={dept.id}>{dept.department_name}</option>
-          ))}
-        </select>
-
-        <div style={{ marginBottom: "10px", padding: "10px", border: "1px solid #ddd", borderRadius: "4px" }}>
-          <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px" }}>Select Skills:</label>
-          {allSkills.map(skill => (
-            <label key={skill.id} style={{ display: "block", marginBottom: "5px" }}>
-              <input
-                type="checkbox"
-                checked={skills.includes(skill.id)}
-                onChange={() => handleSkillChange(skill.id)}
-                style={{ marginRight: "5px" }}
-              />
-              {skill.skill_name}
-            </label>
-          ))}
+          <FormSelect
+            label="Department"
+            name="department_id"
+            placeholder="-- Select Department --"
+            options={departmentOptions}
+            value={form.department_id}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ width: "100%", padding: "10px", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontWeight: "bold" }}
-        >
-          {loading ? "Updating..." : "Update Employee"}
-        </button>
-      </form>
+        {/* Skills list */}
+        <div style={{ marginBottom: "1.5rem", padding: "1.25rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: 'var(--bg-primary)' }}>
+          <label style={{ fontWeight: "700", display: "block", marginBottom: "0.75rem", color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Skills</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            {allSkills.map(skill => (
+              <label key={skill.id} style={{ display: "flex", alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                <input
+                  type="checkbox"
+                  checked={skills.includes(skill.id)}
+                  onChange={() => handleSkillChange(skill.id)}
+                  style={{ width: '1.1rem', height: '1.1rem', cursor: 'pointer' }}
+                />
+                {skill.skill_name}
+              </label>
+            ))}
+          </div>
+        </div>
 
-      <button
-        onClick={() => window.location.href = "/employees"}
-        style={{ width: "100%", padding: "10px", marginTop: "10px", backgroundColor: "#6c757d", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
-      >
-        Cancel
-      </button>
+        {/* Submit Actions */}
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ flex: 1, padding: "0.75rem", backgroundColor: "var(--color-primary-light)", color: "white", border: "none", borderRadius: "var(--radius-md)", cursor: "pointer", fontWeight: "700", fontSize: '1rem' }}
+          >
+            Update Profile
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => navigate("/employees")}
+            className="btn btn-secondary"
+            style={{ padding: "0.75rem 1.5rem", backgroundColor: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", cursor: "pointer", fontWeight: "600" }}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
-
-export default EditEmployee;
