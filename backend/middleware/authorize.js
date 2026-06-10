@@ -1,16 +1,13 @@
-// Role-based authorization middleware
+const AppError = require('../utils/AppError');
+
 const authorize = (allowedRoles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized: No user data" });
+      return next(AppError.unauthorized('Unauthorized: No user data'));
     }
-
     if (!allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        message: `Forbidden: Only ${allowedRoles.join(", ")} can access this resource` 
-      });
+      return next(AppError.forbidden(`Forbidden: Only ${allowedRoles.join(', ')} can access this resource`));
     }
-
     next();
   };
 };

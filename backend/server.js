@@ -1,63 +1,66 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
-const { swaggerUi, swaggerSpec } = require("./swagger");
-const authRoutes = require("./routes/auth");
-const userRoutes = require("./routes/userRoutes");
-const forgotPasswordRoutes = require("./routes/forgotPassword");
-const emailVerificationRoutes = require("./routes/emailVerification");
-const tokenRoutes = require("./routes/tokenRoutes");
-const adminRoutes = require("./routes/adminRoutes");
-const departmentRoutes = require("./routes/departmentRoutes");
-const skillRoutes = require("./routes/skillRoutes");
-const employeeRoutes = require("./routes/employeeRoutes");
-const leaveRoutes = require("./routes/leaveRoutes");
-const assetRoutes = require("./routes/assetRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
-const auditRoutes = require("./routes/auditRoutes");
-const errorHandler = require("./middleware/errorHandler");
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
+require('./config');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const config = require('./config');
+const { swaggerUi, swaggerSpec } = require('./swagger');
+const v1Routes = require('./routes/v1');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const requestLogger = require('./middleware/requestLogger');
+const healthController = require('./controllers/healthController');
+const { startJobs } = require('./jobs');
+const logger = require('./utils/logger');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 app.use(helmet());
+app.use(requestLogger);
 
-// Rate limiter for auth routes
+app.use((req, res, next) => {
+  healthController.incrementApiRequest();
+  next();
+});
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: { message: "Too many requests, please try again later" }
+  message: { message: 'Too many requests, please try again later' }
 });
-app.use("/api/auth", authLimiter);
 
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/password", forgotPasswordRoutes);
-app.use("/api/email", emailVerificationRoutes);
-app.use("/api/token", tokenRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/departments", departmentRoutes);
-app.use("/api/skills", skillRoutes);
-app.use("/api/employees", employeeRoutes);
-app.use("/api/leave", leaveRoutes);
-app.use("/api/assets", assetRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/audit-logs", auditRoutes);
+// API Versioning: v1 (recommended) + legacy /api for backward compatibility
+app.use(['/api/auth', '/api/v1/auth'], authLimiter);
+app.use('/api/v1', v1Routes);
+app.use('/api', v1Routes);
+
+// Health check (also available at root for load balancers)
+app.get('/api/health', healthController.health);
+app.get('/health', healthController.health);
 
 // Swagger API docs
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Serve uploads folder
-app.use("/uploads", express.static("uploads"));
+// Enterprise file storage structure
+app.use('/uploads', express.static('uploads'));
 
-// Centered Error Handling Middleware
+app.use(notFoundHandler);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-console.log("Swagger docs available at http://localhost:5000/api-docs");
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  startJobs();
+}
+
+const PORT = config.port;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT} [${config.env}]`);
+    logger.info(`Swagger docs: http://localhost:${PORT}/api-docs`);
+    logger.info(`Health check: http://localhost:${PORT}/api/health`);
+  });
+}
+
+module.exports = app;

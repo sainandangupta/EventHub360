@@ -1,5 +1,7 @@
 const pool = require('../config/db');
+const AppError = require('../utils/AppError');
 const leaveRepository = require('../repositories/leaveRepository');
+const emailService = require('./emailService');
 
 const leaveService = {
   // Helper: get employee_id from user_id
@@ -31,10 +33,35 @@ const leaveService = {
     return leaveRepository.applyLeave(employeeId, leave_type_id, from_date, to_date, total_days, reason);
   },
 
-  // Get current user's leaves
-  async getMyLeaves(userId, status) {
+  async getMyLeaves(userId, query = {}) {
     const employeeId = await this.getEmployeeIdByUserId(userId);
-    return leaveRepository.getMyLeaves(employeeId, status);
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const { rows, total } = await leaveRepository.getMyLeaves(employeeId, {
+      status: query.status,
+      search: query.search,
+      limit,
+      offset,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder
+    });
+    return { data: rows, total, page, limit, totalPages: Math.ceil(total / limit) };
+  },
+
+  async searchLeaves(query = {}) {
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const { rows, total } = await leaveRepository.searchLeaves({
+      search: query.search,
+      status: query.status,
+      limit,
+      offset,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder
+    });
+    return { data: rows, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
   // Get leave by ID
@@ -58,9 +85,15 @@ const leaveService = {
     throw new Error('Invalid role for approvals');
   },
 
-  // Approve or reject a leave application
   async approveLeave(leaveId, approverId, role, action, remarks) {
-    return leaveRepository.approveLeave(leaveId, approverId, role, action, remarks);
+    const result = await leaveRepository.approveLeave(leaveId, approverId, role, action, remarks);
+    if (action === 'hr_approved') {
+      const leave = await leaveRepository.getLeaveById(leaveId);
+      if (leave?.employee_email) {
+        emailService.sendLeaveApprovedEmail(leave.employee_email, leave.employee_name, leave).catch(() => {});
+      }
+    }
+    return result;
   },
 
   // Get approval history for a leave
@@ -91,7 +124,7 @@ const leaveService = {
       case 'rankings':
         return leaveRepository.getLeaveRankings(reportYear);
       default:
-        throw new Error(`Unknown report type: ${type}`);
+        throw AppError.badRequest(`Unknown report type: ${type}`);
     }
   }
 };

@@ -13,7 +13,7 @@ function EmployeeList() {
       headers: { Authorization: token }
     })
       .then(res => {
-        setEmployees(res.data);
+        setEmployees(res.data.data || res.data);
         setLoading(false);
       })
       .catch(err => {

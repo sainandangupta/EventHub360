@@ -3,6 +3,7 @@ const employeeRepository = require('../repositories/employeeRepository');
 const pool = require('../config/db');
 const auditLogger = require('../utils/auditLogger');
 const notificationService = require('./notificationService');
+const emailService = require('./emailService');
 const logger = require('../utils/logger');
 
 const assetService = {
@@ -107,6 +108,10 @@ const assetService = {
       );
     } catch (err) {
       logger.error('Failed to send asset allocation notification:', err);
+    }
+
+    if (employee.email) {
+      emailService.sendAssetAssignedEmail(employee.email, employee.name, asset.asset_name).catch(() => {});
     }
 
     return { asset: updatedAsset, allocation };

@@ -28,14 +28,15 @@ const employeeRepository = {
     await pool.query('DELETE FROM employee_skills WHERE employee_id = $1', [employeeId]);
   },
 
-  // Get all profiles
-  async getAllEmployees() {
-    const result = await pool.query(`
+  // Get all profiles with pagination, search, filter, sort
+  async getAllEmployees({ search, department_id, limit = 20, offset = 0, sortBy = 'created_at', sortOrder = 'DESC' } = {}) {
+    let query = `
       SELECT 
         ep.id,
         u.name,
         u.email,
         d.department_name,
+        ep.department_id,
         ep.designation,
         ep.salary,
         ep.phone,
@@ -43,9 +44,48 @@ const employeeRepository = {
       FROM employee_profiles ep
       INNER JOIN users u ON ep.user_id = u.id
       INNER JOIN departments d ON ep.department_id = d.id
-      ORDER BY ep.id DESC
-    `);
-    return result.rows;
+      WHERE 1=1
+    `;
+    const params = [];
+    let idx = 1;
+
+    if (search) {
+      query += ` AND (u.name ILIKE $${idx} OR u.email ILIKE $${idx} OR ep.designation ILIKE $${idx} OR ep.phone ILIKE $${idx})`;
+      params.push(`%${search}%`);
+      idx++;
+    }
+    if (department_id) {
+      query += ` AND ep.department_id = $${idx}`;
+      params.push(department_id);
+      idx++;
+    }
+
+    const sortMap = { salary: 'ep.salary', name: 'u.name', created_at: 'ep.created_at', designation: 'ep.designation' };
+    const safeSort = sortMap[sortBy] || 'ep.created_at';
+    const safeOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+    let countQuery = `SELECT COUNT(*) FROM employee_profiles ep
+      INNER JOIN users u ON ep.user_id = u.id WHERE 1=1`;
+    const countParams = [];
+    let cIdx = 1;
+    if (search) {
+      countQuery += ` AND (u.name ILIKE $${cIdx} OR u.email ILIKE $${cIdx} OR ep.designation ILIKE $${cIdx} OR ep.phone ILIKE $${cIdx})`;
+      countParams.push(`%${search}%`);
+      cIdx++;
+    }
+    if (department_id) {
+      countQuery += ` AND ep.department_id = $${cIdx}`;
+      countParams.push(department_id);
+    }
+
+    const countResult = await pool.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].count);
+
+    query += ` ORDER BY ${safeSort} ${safeOrder} LIMIT $${idx} OFFSET $${idx + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    return { rows: result.rows, total };
   },
 
   // Get profile by ID

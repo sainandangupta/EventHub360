@@ -13,8 +13,9 @@ export default function useEmployee() {
     try {
       setLoading(true);
       const res = await axios.get(API, { headers: getHeaders() });
-      setEmployees(res.data);
-      return res.data;
+      const list = res.data.data || res.data;
+      setEmployees(list);
+      return list;
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch employees');
     } finally {

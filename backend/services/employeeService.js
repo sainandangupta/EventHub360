@@ -1,5 +1,6 @@
 const employeeRepository = require('../repositories/employeeRepository');
 const auditLogger = require('../utils/auditLogger');
+const AppError = require('../utils/AppError');
 
 const employeeService = {
   // Create employee
@@ -24,9 +25,20 @@ const employeeService = {
     return employee;
   },
 
-  // Get all employees
-  async getAllEmployees() {
-    return employeeRepository.getAllEmployees();
+  // Get all employees with pagination, search, filter, sort
+  async getAllEmployees(query = {}) {
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const { rows, total } = await employeeRepository.getAllEmployees({
+      search: query.search,
+      department_id: query.department_id,
+      limit,
+      offset,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder
+    });
+    return { data: rows, total, page, limit, totalPages: Math.ceil(total / limit) };
   },
 
   // Get employee by ID
@@ -49,7 +61,7 @@ const employeeService = {
     // Fetch old data for audit trail
     const oldEmployee = await employeeRepository.getEmployeeById(id);
     if (!oldEmployee) {
-      throw new Error('Employee profile not found');
+      throw AppError.notFound('Employee profile not found');
     }
 
     const { department_id, phone, address, designation, salary, skills } = data;
@@ -95,7 +107,7 @@ const employeeService = {
   async deleteEmployee(id, performedBy) {
     const oldEmployee = await employeeRepository.getEmployeeById(id);
     if (!oldEmployee) {
-      throw new Error('Employee profile not found');
+      throw AppError.notFound('Employee profile not found');
     }
 
     // Delete relationships
@@ -114,7 +126,7 @@ const employeeService = {
   // Upload employee images
   async uploadImages(employeeId, files) {
     if (!files || files.length === 0) {
-      throw new Error('No files provided');
+      throw AppError.badRequest('No files provided');
     }
 
     const savedImages = [];

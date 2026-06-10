@@ -1,4 +1,5 @@
 const employeeService = require('../services/employeeService');
+const AppError = require('../utils/AppError');
 
 const employeeController = {
   // Create profile
@@ -15,11 +16,11 @@ const employeeController = {
     }
   },
 
-  // Get all profiles
+  // Get all profiles with pagination, search, filter, sort
   async getAllEmployees(req, res, next) {
     try {
-      const employees = await employeeService.getAllEmployees();
-      res.json(employees);
+      const result = await employeeService.getAllEmployees(req.query);
+      res.json(result);
     } catch (err) {
       next(err);
     }
@@ -30,9 +31,7 @@ const employeeController = {
     try {
       const { id } = req.params;
       const employee = await employeeService.getEmployeeById(id);
-      if (!employee) {
-        return res.status(404).json({ message: 'Employee not found' });
-      }
+      if (!employee) throw AppError.notFound('Employee not found');
       res.json(employee);
     } catch (err) {
       next(err);

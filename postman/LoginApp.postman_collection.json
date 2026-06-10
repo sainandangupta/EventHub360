@@ -1,0 +1,254 @@
+{
+  "info": {
+    "name": "LoginApp - Production API",
+    "description": "Complete API collection for LoginApp HR Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/health"
+          }
+        },
+        {
+          "name": "Health Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "{{token}}" }],
+            "url": "{{baseUrl}}/api/v1/health/dashboard"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth APIs",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/signup"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Employee APIs",
+      "item": [
+        {
+          "name": "Get Employees (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "{{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/employees?page=1&limit=20&search=&sortBy=salary&sortOrder=desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "employees"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "" },
+                { "key": "sortBy", "value": "salary" },
+                { "key": "sortOrder", "value": "desc" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Main St\",\n  \"designation\": \"Developer\",\n  \"salary\": 75000,\n  \"department_id\": 1,\n  \"skills\": [1]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/employees"
+          }
+        },
+        {
+          "name": "Get Employee by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "{{token}}" }],
+            "url": "{{baseUrl}}/api/v1/employees/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leave APIs",
+      "item": [
+        {
+          "name": "Get Leave Types",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "{{token}}" }],
+            "url": "{{baseUrl}}/api/v1/leave/types"
+          }
+        },
+        {
+          "name": "Apply Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leave_type_id\": 1,\n  \"from_date\": \"2026-07-01\",\n  \"to_date\": \"2026-07-03\",\n  \"total_days\": 3,\n  \"reason\": \"Family vacation\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/leave/apply"
+          }
+        },
+        {
+          "name": "My Leaves",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "{{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/leave/my-leaves?page=1&status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "leave", "my-leaves"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "status", "value": "pending" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Leaves",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "{{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/leave/search?search=john&status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "leave", "search"],
+              "query": [
+                { "key": "search", "value": "john" },
+                { "key": "status", "value": "pending" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Asset APIs",
+      "item": [
+        {
+          "name": "Get Assets (Paginated)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "{{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assets?page=1&limit=20&search=laptop&status=Available",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assets"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "search", "value": "laptop" },
+                { "key": "status", "value": "Available" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Asset",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_code\": \"LAP-001\",\n  \"asset_name\": \"Dell Laptop\",\n  \"asset_type\": \"Laptop\",\n  \"purchase_cost\": 1200\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/assets"
+          }
+        },
+        {
+          "name": "Allocate Asset",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "{{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"asset_id\": 1,\n  \"employee_id\": 1\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/assets/allocate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Master Data",
+      "item": [
+        {
+          "name": "Get Departments (Cached)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/departments"
+          }
+        },
+        {
+          "name": "Get Skills (Cached)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/skills"
+          }
+        }
+      ]
+    }
+  ]
+}

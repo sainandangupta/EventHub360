@@ -1,136 +1,88 @@
 const leaveService = require('../services/leaveService');
+const AppError = require('../utils/AppError');
 
 const leaveController = {
-  // Get all leave types
-  async getLeaveTypes(req, res) {
+  async getLeaveTypes(req, res, next) {
     try {
-      const types = await leaveService.getLeaveTypes();
-      res.json(types);
-    } catch (err) {
-      console.error('Get Leave Types Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+      res.json(await leaveService.getLeaveTypes());
+    } catch (err) { next(err); }
   },
 
-  // Get current user's leave balance
-  async getMyBalance(req, res) {
+  async getMyBalance(req, res, next) {
     try {
       const employeeId = await leaveService.getEmployeeIdByUserId(req.user.id);
       const year = req.query.year || new Date().getFullYear();
-      const balance = await leaveService.getLeaveBalance(employeeId, year);
-      res.json(balance);
-    } catch (err) {
-      console.error('Get Balance Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+      res.json(await leaveService.getLeaveBalance(employeeId, year));
+    } catch (err) { next(err); }
   },
 
-  // Apply for leave
-  async applyLeave(req, res) {
+  async applyLeave(req, res, next) {
     try {
       const result = await leaveService.applyLeave(req.user.id, req.body);
       res.status(201).json({ message: 'Leave application submitted successfully', data: result });
-    } catch (err) {
-      console.error('Apply Leave Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+    } catch (err) { next(err); }
   },
 
-  // Get current user's leaves
-  async getMyLeaves(req, res) {
+  async getMyLeaves(req, res, next) {
     try {
-      const leaves = await leaveService.getMyLeaves(req.user.id, req.query.status);
-      res.json(leaves);
-    } catch (err) {
-      console.error('Get My Leaves Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+      const result = await leaveService.getMyLeaves(req.user.id, req.query);
+      res.json(result);
+    } catch (err) { next(err); }
   },
 
-  // Get leave by ID
-  async getLeaveById(req, res) {
+  async searchLeaves(req, res, next) {
+    try {
+      const result = await leaveService.searchLeaves(req.query);
+      res.json(result);
+    } catch (err) { next(err); }
+  },
+
+  async getLeaveById(req, res, next) {
     try {
       const leave = await leaveService.getLeaveById(req.params.id);
-      if (!leave) {
-        return res.status(404).json({ message: 'Leave application not found' });
-      }
+      if (!leave) throw AppError.notFound('Leave application not found');
       res.json(leave);
-    } catch (err) {
-      console.error('Get Leave By ID Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+    } catch (err) { next(err); }
   },
 
-  // Cancel a leave application
-  async cancelLeave(req, res) {
+  async cancelLeave(req, res, next) {
     try {
       const result = await leaveService.cancelLeave(req.params.id, req.user.id);
-      if (!result) {
-        return res.status(400).json({ message: 'Cannot cancel this leave. It may not exist, not belong to you, or is not in pending status.' });
-      }
+      if (!result) throw AppError.badRequest('Cannot cancel this leave');
       res.json({ message: 'Leave application cancelled successfully', data: result });
-    } catch (err) {
-      console.error('Cancel Leave Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+    } catch (err) { next(err); }
   },
 
-  // Get pending approvals
-  async getPendingApprovals(req, res) {
+  async getPendingApprovals(req, res, next) {
     try {
-      const pending = await leaveService.getPendingApprovals(req.user.id, req.user.role);
-      res.json(pending);
-    } catch (err) {
-      console.error('Get Pending Approvals Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+      res.json(await leaveService.getPendingApprovals(req.user.id, req.user.role));
+    } catch (err) { next(err); }
   },
 
-  // Approve or reject a leave
-  async approveLeave(req, res) {
+  async approveLeave(req, res, next) {
     try {
       const { action, remarks } = req.body;
       const result = await leaveService.approveLeave(req.params.id, req.user.id, req.user.role, action, remarks);
       res.json({ message: 'Leave application updated successfully', data: result });
-    } catch (err) {
-      console.error('Approve Leave Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+    } catch (err) { next(err); }
   },
 
-  // Get approval history
-  async getApprovalHistory(req, res) {
+  async getApprovalHistory(req, res, next) {
     try {
-      const history = await leaveService.getApprovalHistory(req.params.id);
-      res.json(history);
-    } catch (err) {
-      console.error('Get Approval History Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+      res.json(await leaveService.getApprovalHistory(req.params.id));
+    } catch (err) { next(err); }
   },
 
-  // Get dashboard statistics
-  async getDashboardStats(req, res) {
+  async getDashboardStats(req, res, next) {
     try {
-      const stats = await leaveService.getDashboardStats();
-      res.json(stats);
-    } catch (err) {
-      console.error('Get Dashboard Stats Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+      res.json(await leaveService.getDashboardStats());
+    } catch (err) { next(err); }
   },
 
-  // Get reports by type
-  async getReports(req, res) {
+  async getReports(req, res, next) {
     try {
-      const { type } = req.params;
-      const { year } = req.query;
-      const report = await leaveService.getReports(type, year);
-      res.json(report);
-    } catch (err) {
-      console.error('Get Reports Error:', err);
-      res.status(500).json({ message: err.message });
-    }
+      res.json(await leaveService.getReports(req.params.type, req.query.year));
+    } catch (err) { next(err); }
   }
 };
 

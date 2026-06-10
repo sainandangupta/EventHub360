@@ -67,7 +67,7 @@ export default function AssetsList() {
       axios.get('http://localhost:5000/api/employees', {
         headers: { Authorization: token }
       })
-        .then(res => setEmployees(res.data))
+        .then(res => setEmployees(res.data.data || res.data))
         .catch(err => console.error('Error fetching employees:', err));
     }
   }, [showAllocateModal, token]);

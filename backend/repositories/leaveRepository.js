@@ -51,23 +51,82 @@ const leaveRepository = {
     return result.rows[0];
   },
 
-  // Get leaves for an employee, optionally filtered by status
-  async getMyLeaves(employeeId, status) {
+  // Get leaves for an employee with pagination, search, filter, sort
+  async getMyLeaves(employeeId, { status, search, limit = 20, offset = 0, sortBy = 'created_at', sortOrder = 'DESC' } = {}) {
     let query = `SELECT la.*, lt.leave_name AS leave_type_name
                  FROM leave_applications la
                  JOIN leave_types lt ON la.leave_type_id = lt.id
                  WHERE la.employee_id = $1`;
     const params = [employeeId];
+    let idx = 2;
 
     if (status) {
-      query += ' AND la.status = $2';
+      query += ` AND la.status = $${idx}`;
       params.push(status);
+      idx++;
+    }
+    if (search) {
+      query += ` AND (la.reason ILIKE $${idx} OR lt.leave_name ILIKE $${idx})`;
+      params.push(`%${search}%`);
+      idx++;
     }
 
-    query += ' ORDER BY la.created_at DESC';
+    const sortMap = { from_date: 'la.from_date', created_at: 'la.created_at', status: 'la.status', total_days: 'la.total_days' };
+    const safeSort = sortMap[sortBy] || 'la.created_at';
+    const safeOrder = ['ASC', 'DESC'].includes((sortOrder || '').toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+    let countQuery = `SELECT COUNT(*) FROM leave_applications la
+      JOIN leave_types lt ON la.leave_type_id = lt.id WHERE la.employee_id = $1`;
+    const countParams = [employeeId];
+    let cIdx = 2;
+    if (status) { countQuery += ` AND la.status = $${cIdx}`; countParams.push(status); cIdx++; }
+    if (search) { countQuery += ` AND (la.reason ILIKE $${cIdx} OR lt.leave_name ILIKE $${cIdx})`; countParams.push(`%${search}%`); }
+
+    const countResult = await pool.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].count);
+
+    query += ` ORDER BY ${safeSort} ${safeOrder} LIMIT $${idx} OFFSET $${idx + 1}`;
+    params.push(limit, offset);
 
     const result = await pool.query(query, params);
-    return result.rows;
+    return { rows: result.rows, total };
+  },
+
+  // Search all leaves (admin/hr)
+  async searchLeaves({ search, status, limit = 20, offset = 0, sortBy = 'created_at', sortOrder = 'DESC' } = {}) {
+    let query = `SELECT * FROM leave_summary_view WHERE 1=1`;
+    const params = [];
+    let idx = 1;
+
+    if (search) {
+      query += ` AND (employee_name ILIKE $${idx} OR employee_email ILIKE $${idx} OR reason ILIKE $${idx})`;
+      params.push(`%${search}%`);
+      idx++;
+    }
+    if (status) {
+      query += ` AND status = $${idx}`;
+      params.push(status);
+      idx++;
+    }
+
+    const sortMap = { from_date: 'from_date', created_at: 'created_at', status: 'status', total_days: 'total_days' };
+    const safeSort = sortMap[sortBy] || 'created_at';
+    const safeOrder = ['ASC', 'DESC'].includes((sortOrder || '').toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
+
+    let countQuery = `SELECT COUNT(*) FROM leave_summary_view WHERE 1=1`;
+    const countParams = [];
+    let cIdx = 1;
+    if (search) { countQuery += ` AND (employee_name ILIKE $${cIdx} OR employee_email ILIKE $${cIdx} OR reason ILIKE $${cIdx})`; countParams.push(`%${search}%`); cIdx++; }
+    if (status) { countQuery += ` AND status = $${cIdx}`; countParams.push(status); }
+
+    const countResult = await pool.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].count);
+
+    query += ` ORDER BY ${safeSort} ${safeOrder} LIMIT $${idx} OFFSET $${idx + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    return { rows: result.rows, total };
   },
 
   // Get pending leaves for a manager

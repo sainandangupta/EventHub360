@@ -40,8 +40,9 @@ export function LeaveProvider({ children }) {
       setLoading(true);
       const url = status ? `${API}/my-leaves?status=${status}` : `${API}/my-leaves`;
       const res = await axios.get(url, { headers: getHeaders() });
-      setMyLeaves(res.data);
-      return res.data;
+      const leaves = res.data.data || res.data;
+      setMyLeaves(leaves);
+      return leaves;
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch leaves');
     } finally {

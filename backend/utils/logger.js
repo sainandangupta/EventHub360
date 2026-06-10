@@ -1,31 +1,19 @@
 const winston = require('winston');
 const path = require('path');
+const fs = require('fs');
 
-// Define log levels
-const levels = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  debug: 4,
-};
+const logsDir = path.join(__dirname, '..', 'logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
+}
 
-// Define level colors
-const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'white',
-};
-
+const levels = { error: 0, warn: 1, info: 2, http: 3, debug: 4 };
+const colors = { error: 'red', warn: 'yellow', info: 'green', http: 'magenta', debug: 'white' };
 winston.addColors(colors);
 
-// Define log formats
-const format = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-  winston.format.errors({ stack: true }), // capture stacks
-  winston.format.splat(),
+const jsonFormat = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.errors({ stack: true }),
   winston.format.json()
 );
 
@@ -36,29 +24,28 @@ const consoleFormat = winston.format.combine(
   )
 );
 
-// Define transporters
-const transports = [
-  // Output errors to logs/error.log
-  new winston.transports.File({
-    filename: path.join('logs', 'error.log'),
-    level: 'error',
-  }),
-  // Output everything to logs/combined.log
-  new winston.transports.File({
-    filename: path.join('logs', 'combined.log'),
-  }),
-  // Console logging
-  new winston.transports.Console({
-    format: consoleFormat,
-    level: process.env.LOG_LEVEL || 'info',
-  })
-];
+const createFileTransport = (filename, level) =>
+  new winston.transports.File({ filename: path.join(logsDir, filename), level });
 
 const logger = winston.createLogger({
-  level: 'info',
+  level: process.env.LOG_LEVEL || 'info',
   levels,
-  format,
-  transports,
+  format: jsonFormat,
+  transports: [
+    createFileTransport('error.log', 'error'),
+    createFileTransport('combined.log'),
+    createFileTransport('api.log', 'http'),
+    createFileTransport('login.log', 'info'),
+    createFileTransport('security.log', 'warn'),
+    new winston.transports.Console({
+      format: consoleFormat,
+      level: process.env.LOG_LEVEL || 'info'
+    })
+  ]
 });
+
+logger.api = (message, meta = {}) => logger.http(message, { type: 'api', ...meta });
+logger.login = (message, meta = {}) => logger.info(message, { type: 'login', ...meta });
+logger.security = (message, meta = {}) => logger.warn(message, { type: 'security', ...meta });
 
 module.exports = logger;

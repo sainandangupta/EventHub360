@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const protect = require('../middleware/authMiddleware');
 const authorize = require('../middleware/authorize');
-const { validate, applyLeaveSchema, approveLeaveSchema } = require('../validators/leaveValidators');
+const validate = require('../middleware/validate');
+const { applyLeaveSchema, approveLeaveSchema } = require('../validators/leave.validator');
 const leaveController = require('../controllers/leaveController');
 
 /**
@@ -80,6 +81,7 @@ router.post('/apply', protect, authorize(['user', 'manager']), validate(applyLea
  *         description: List of leave applications
  */
 router.get('/my-leaves', protect, leaveController.getMyLeaves);
+router.get('/search', protect, authorize(['hr', 'admin']), leaveController.searchLeaves);
 
 /**
  * @swagger

@@ -3,7 +3,8 @@ const router = express.Router();
 const protect = require('../middleware/authMiddleware');
 const authorize = require('../middleware/authorize');
 const assetController = require('../controllers/assetController');
-const { createAssetSchema, allocateAssetSchema, updateAssetStatusSchema, validate } = require('../validators/assetValidators');
+const validate = require('../middleware/validate');
+const { createAssetSchema, allocateAssetSchema, updateAssetStatusSchema } = require('../validators/asset.validator');
 
 // GET reports (hr & admin only) - put before parameterized /:id route so it doesn't conflict
 router.get('/report', protect, authorize(['hr', 'admin']), assetController.getAssetReport);
