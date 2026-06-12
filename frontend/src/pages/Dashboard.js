@@ -15,16 +15,20 @@ import {
   Pie,
   Cell,
   BarChart,
-  Bar
+  Bar,
+  LineChart,
+  Line
 } from "recharts";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState(null);
   const [leaveStats, setLeaveStats] = useState(null);
+  const [payrollSummary, setPayrollSummary] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -59,10 +63,23 @@ export default function Dashboard() {
     axios.get("http://localhost:5000/api/leave/dashboard-stats", { headers })
       .then(res => {
         setLeaveStats(res.data);
-        setLoading(false);
       })
       .catch(err => {
         console.log("Leave Stats Fetch Error:", err);
+      });
+
+    // Fetch monthly salary summary
+    axios.get("http://localhost:5000/api/salary/reports/monthly-summary", { headers })
+      .then(res => {
+        const formatted = (res.data || []).map(item => ({
+          period: `${MONTH_NAMES[item.month - 1] || item.month} ${item.year}`,
+          "Salary Expense": parseFloat(item.total_payroll)
+        })).reverse();
+        setPayrollSummary(formatted);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.log("Salary Summary Fetch Error:", err);
         setLoading(false);
       });
   }, []);
@@ -108,6 +125,11 @@ export default function Dashboard() {
     { name: "Available", count: (stats.total_assets || 0) - (stats.allocated_assets || 0), fill: "#00C49F" }
   ] : [];
 
+  const workModeDistributionData = stats?.work_mode_distribution || [];
+  const cityDistributionData = stats?.city_distribution || [];
+  const attendanceTrendData = stats?.attendance_trend || [];
+  const hybridCount = stats?.work_mode_distribution?.find(item => item.name === 'hybrid')?.count || 0;
+
   return (
     <div className="page-container" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       
@@ -127,17 +149,21 @@ export default function Dashboard() {
       {/* Main KPI Stats Row */}
       <div>
         <h2 style={{ color: "var(--text-primary)", marginBottom: "1rem", fontSize: "1.25rem", fontWeight: '700' }}>📊 Enterprise Statistics</h2>
-        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
           <StatCard icon="👥" title="Total Employees" value={stats?.total_employees || 0} color="#0088FE" />
           <StatCard icon="🏢" title="Departments" value={stats?.total_departments || 0} color="#00C49F" />
           <StatCard icon="📦" title="Total Assets" value={stats?.total_assets || 0} color="#FFBB28" />
-          <StatCard icon="🤝" title="Allocated Assets" value={stats?.allocated_assets || 0} color="#FF8042" />
           <StatCard icon="⏳" title="Pending Leaves" value={leaveStats?.pending || 0} color="#dc3545" />
+          <StatCard icon="📅" title="Present Today" value={stats?.attendance_today?.present_today || 0} color="#82ca9d" />
+          <StatCard icon="❌" title="Absent Today" value={stats?.attendance_today?.absent_today || 0} color="#FF8042" />
+          <StatCard icon="🔄" title="Hybrid Employees" value={hybridCount} color="#8884d8" />
+          <StatCard icon="📈" title="Attendance Rate" value={`${stats?.overall_attendance_pct || 100.0}%`} color="#10b981" />
+          <StatCard icon="💰" title="Monthly Payroll" value={`$${(stats?.total_payroll_cost || 0).toLocaleString()}`} color="#4f46e5" />
         </div>
       </div>
 
       {/* Charts Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
         
         {/* Hiring Trend Line/Area Chart */}
         <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
@@ -161,6 +187,36 @@ export default function Dashboard() {
               </ResponsiveContainer>
             ) : (
               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No hiring data recorded yet.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Employee Work Mode Donut Chart */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>🟢 Employee Work Mode Distribution</h3>
+          <div style={{ width: '100%', height: '280px' }}>
+            {workModeDistributionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={workModeDistributionData}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="count"
+                  >
+                    {workModeDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+                  <Legend verticalAlign="bottom" height={36} formatter={(value, entry) => <span style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{value.toUpperCase()} ({entry.payload.count})</span>} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No work mode data available.</div>
             )}
           </div>
         </div>
@@ -243,6 +299,68 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* City-wise Employee Distribution */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>🏙️ City-wise Employee Distribution</h3>
+          <div style={{ width: '100%', height: '280px' }}>
+            {cityDistributionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={cityDistributionData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={12} allowDecimals={false} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+                  <Bar dataKey="count" name="Employees" fill="#0088FE" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No location logs.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Attendance Trends Last 7 Days Line Chart */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>📅 Attendance Trends (Last 7 Days)</h3>
+          <div style={{ width: '100%', height: '280px' }}>
+            {attendanceTrendData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={attendanceTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="day" stroke="var(--text-secondary)" fontSize={12} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={12} allowDecimals={false} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+                  <Legend formatter={(value) => <span style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{value}</span>} />
+                  <Line type="monotone" dataKey="present" stroke="var(--color-success)" strokeWidth={2} activeDot={{ r: 8 }} />
+                  <Line type="monotone" dataKey="absent" stroke="var(--color-danger)" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No attendance trend logs.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Monthly Salary Expense Bar Chart */}
+        <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', minHeight: '350px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginBottom: '1rem', color: 'var(--text-primary)' }}>📈 Monthly Salary Expense</h3>
+          <div style={{ width: '100%', height: '280px' }}>
+            {payrollSummary.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={payrollSummary}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+                  <XAxis dataKey="period" stroke="var(--text-secondary)" fontSize={12} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={12} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }} />
+                  <Bar dataKey="Salary Expense" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>No salary payouts.</div>
+            )}
+          </div>
+        </div>
+
       </div>
 
       {/* Quick Action Hub */}
@@ -255,6 +373,9 @@ export default function Dashboard() {
           <Button variant="secondary" onClick={() => navigate("/leave/my-leaves")}>📋 My Leaves</Button>
           <Button variant="secondary" onClick={() => navigate("/leave/balance")}>💰 Leave Balance</Button>
           <Button variant="secondary" onClick={() => navigate("/employees")}>👥 Employee Profiles</Button>
+          <Button variant="secondary" onClick={() => navigate("/employee-master")}>👥 Employee Master</Button>
+          <Button variant="secondary" onClick={() => navigate("/attendance")}>📅 Attendance Board</Button>
+          <Button variant="secondary" onClick={() => navigate("/salary")}>💰 Salary & Payroll</Button>
           <Button variant="secondary" onClick={() => navigate("/assets")}>📦 Asset Master</Button>
           <Button variant="secondary" onClick={() => navigate("/reports")}>📑 Reporting & Search</Button>
           

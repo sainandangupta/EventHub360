@@ -7,6 +7,7 @@ const navSections = [
     items: [
       { label: 'Dashboard', icon: '📊', path: '/dashboard', roles: ['user', 'manager', 'hr', 'admin'] },
       { label: 'Notifications', icon: '🔔', path: '/notifications', roles: ['user', 'manager', 'hr', 'admin'] },
+      { label: 'Attendance Board', icon: '📅', path: '/attendance', roles: ['user', 'manager', 'hr', 'admin'] },
     ]
   },
   {
@@ -29,6 +30,7 @@ const navSections = [
     title: 'Organization',
     items: [
       { label: 'Employees', icon: '👥', path: '/employees', roles: ['user', 'manager', 'hr', 'admin'] },
+      { label: 'Employee Master', icon: '👥', path: '/employee-master', roles: ['manager', 'hr', 'admin'] },
       { label: 'Departments', icon: '🏢', path: '/departments', roles: ['user', 'manager', 'hr', 'admin'] },
       { label: 'Skills', icon: '🎯', path: '/skills', roles: ['user', 'manager', 'hr', 'admin'] },
     ]
@@ -37,6 +39,7 @@ const navSections = [
     title: 'Reports & Analytics',
     items: [
       { label: 'ERP Reports Hub', icon: '📑', path: '/reports', roles: ['user', 'manager', 'hr', 'admin'] },
+      { label: 'Salary & Payroll', icon: '💰', path: '/salary', roles: ['hr', 'admin'] },
     ]
   },
   {

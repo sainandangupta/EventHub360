@@ -134,7 +134,12 @@ router.get('/pending', protect, authorize(['manager', 'hr']), leaveController.ge
  *       200:
  *         description: Report data
  */
-router.get('/reports/:type', protect, authorize(['hr', 'admin']), leaveController.getReports);
+router.get('/reports/:type', protect, (req, res, next) => {
+  if (req.params.type === 'leave-balance') {
+    return next();
+  }
+  return authorize(['hr', 'admin'])(req, res, next);
+}, leaveController.getReports);
 
 /**
  * @swagger

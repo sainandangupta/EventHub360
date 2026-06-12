@@ -2,11 +2,13 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LeaveProvider } from './context/LeaveContext';
+import { ToastContainer } from './components/ui';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import EmailVerification from './pages/EmailVerification';
 import AdminDashboard from './pages/AdminDashboard';
 import EmployeeList from './pages/EmployeeList';
@@ -25,17 +27,22 @@ import AssetDetail from './pages/AssetDetail';
 import NotificationsList from './pages/NotificationsList';
 import AuditLogs from './pages/AuditLogs';
 import ReportsDashboard from './pages/ReportsDashboard';
+import AttendanceDashboard from './pages/AttendanceDashboard';
+import EmployeeMasterDashboard from './pages/EmployeeMasterDashboard';
+import SalaryDashboard from './pages/SalaryDashboard';
 
 function App() {
   return (
     <AuthProvider>
       <LeaveProvider>
         <BrowserRouter>
+          <ToastContainer />
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/verify-email/:token" element={<EmailVerification />} />
             
             <Route element={<ProtectedRoute />}>
@@ -52,6 +59,9 @@ function App() {
               <Route path="/assets/:id" element={<AssetDetail />} />
               <Route path="/notifications" element={<NotificationsList />} />
               <Route path="/reports" element={<ReportsDashboard />} />
+              <Route path="/attendance" element={<AttendanceDashboard />} />
+              <Route path="/employee-master" element={<EmployeeMasterDashboard />} />
+              <Route path="/salary" element={<SalaryDashboard />} />
             </Route>
 
             {/* Protected - Employee & Manager can apply */}

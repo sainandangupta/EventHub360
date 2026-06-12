@@ -5,14 +5,18 @@ const AppError = require('../utils/AppError');
 const employeeService = {
   // Create employee
   async createEmployee(userId, data, performedBy) {
-    const { department_id, phone, address, designation, salary, skills } = data;
+    const { department_id, phone, address, designation, salary, skills, city, work_mode, status, joining_date } = data;
     const employee = await employeeRepository.createEmployee(
       userId,
       department_id,
       phone,
       address,
       designation,
-      salary
+      salary,
+      city,
+      work_mode,
+      status,
+      joining_date
     );
 
     if (skills && skills.length > 0) {
@@ -33,6 +37,9 @@ const employeeService = {
     const { rows, total } = await employeeRepository.getAllEmployees({
       search: query.search,
       department_id: query.department_id,
+      city: query.city,
+      work_mode: query.work_mode,
+      status: query.status,
       limit,
       offset,
       sortBy: query.sortBy,
@@ -64,14 +71,18 @@ const employeeService = {
       throw AppError.notFound('Employee profile not found');
     }
 
-    const { department_id, phone, address, designation, salary, skills } = data;
+    const { department_id, phone, address, designation, salary, skills, city, work_mode, status, joining_date } = data;
     const updatedEmployee = await employeeRepository.updateEmployee(
       id,
       department_id,
       phone,
       address,
       designation,
-      salary
+      salary,
+      city,
+      work_mode,
+      status,
+      joining_date
     );
 
     // Update skills: delete old and insert new
@@ -86,7 +97,11 @@ const employeeService = {
       phone: oldEmployee.phone,
       address: oldEmployee.address,
       designation: oldEmployee.designation,
-      salary: oldEmployee.salary
+      salary: oldEmployee.salary,
+      city: oldEmployee.city,
+      work_mode: oldEmployee.work_mode,
+      status: oldEmployee.status,
+      joining_date: oldEmployee.joining_date
     };
 
     const newData = {
@@ -94,7 +109,11 @@ const employeeService = {
       phone: updatedEmployee.phone,
       address: updatedEmployee.address,
       designation: updatedEmployee.designation,
-      salary: updatedEmployee.salary
+      salary: updatedEmployee.salary,
+      city: updatedEmployee.city,
+      work_mode: updatedEmployee.work_mode,
+      status: updatedEmployee.status,
+      joining_date: updatedEmployee.joining_date
     };
 
     // Log the JSONB difference in audit trail

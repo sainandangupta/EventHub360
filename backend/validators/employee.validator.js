@@ -11,17 +11,24 @@ const createEmployeeSchema = Joi.object({
   designation: Joi.string().max(100).required(),
   salary: Joi.number().positive().precision(2).max(99999999).required(),
   department_id: Joi.number().integer().positive().required(),
-  skills: Joi.array().items(Joi.number().integer().positive()).optional().default([])
+  skills: Joi.array().items(Joi.number().integer().positive()).optional().default([]),
+  city: Joi.string().max(100).optional().allow(''),
+  work_mode: Joi.string().valid('online', 'offline', 'hybrid').default('offline').optional(),
+  status: Joi.string().valid('active', 'inactive').default('active').optional(),
+  joining_date: Joi.string().isoDate().optional().allow('')
 });
 
 const updateEmployeeSchema = createEmployeeSchema;
 
 const employeeQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(1000).default(20),
   search: Joi.string().max(100).allow('').optional(),
   department_id: Joi.number().integer().positive().optional(),
-  sortBy: Joi.string().valid('salary', 'name', 'created_at', 'designation').default('created_at'),
+  city: Joi.string().max(100).allow('').optional(),
+  work_mode: Joi.string().valid('online', 'offline', 'hybrid').optional(),
+  status: Joi.string().valid('active', 'inactive').optional(),
+  sortBy: Joi.string().valid('salary', 'name', 'created_at', 'designation', 'joining_date').default('created_at'),
   sortOrder: Joi.string().valid('asc', 'desc', 'ASC', 'DESC').default('desc')
 });
 

@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import FormTable from '../components/ui/FormTable';
 import FormInput from '../components/ui/FormInput';
 import FormSelect from '../components/ui/FormSelect';
+import { showToast } from '../components/ui';
 
 export default function ReportsDashboard() {
   const [reportType, setReportType] = useState('employees'); // employees, leaves, assets
@@ -52,7 +53,8 @@ export default function ReportsDashboard() {
 
     axios.get(endpoint, { headers: { Authorization: token } })
       .then(res => {
-        setData(res.data);
+        const reportRows = Array.isArray(res.data) ? res.data : (res.data.data || []);
+        setData(reportRows);
         setPage(1);
         setLoading(false);
       })
@@ -176,7 +178,7 @@ export default function ReportsDashboard() {
   // EXPORTS
   const exportToExcel = () => {
     if (processedData.length === 0) {
-      alert('No data available to export');
+      showToast({ message: 'No data available to export', type: 'warning' });
       return;
     }
     const cleanData = processedData.map(({ id, user_id, department_id, employee_id, ...rest }) => rest);
@@ -188,7 +190,7 @@ export default function ReportsDashboard() {
 
   const exportToCSV = () => {
     if (processedData.length === 0) {
-      alert('No data available to export');
+      showToast({ message: 'No data available to export', type: 'warning' });
       return;
     }
     const cleanData = processedData.map(({ id, user_id, department_id, employee_id, ...rest }) => rest);
@@ -406,14 +408,24 @@ export default function ReportsDashboard() {
 
       </div>
 
-      {error && <div style={{ color: 'var(--color-danger)', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(220, 53, 69, 0.1)', fontWeight: '600' }}>⚠️ {error}</div>}
+      {error && (
+        <div style={{ color: 'var(--color-danger)', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(220, 53, 69, 0.1)', fontWeight: '600', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>⚠️ {error}</span>
+          <button 
+            onClick={fetchData} 
+            style={{ padding: '0.4rem 0.8rem', backgroundColor: 'var(--color-primary-light)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600' }}
+          >
+            🔄 Retry
+          </button>
+        </div>
+      )}
 
       {/* Action Toolbar & Export Buttons */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Order by:</span>
           <button 
-            onClick={() => handleSort('name' || 'asset_code' || 'employee_name')}
+            onClick={() => handleSort(reportType === 'employees' ? 'name' : reportType === 'leaves' ? 'employee_name' : 'asset_code')}
             style={{ padding: '0.4rem 0.8rem', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.85rem' }}
           >
             {sortField === 'id' ? 'ID' : sortField} ({sortOrder})

@@ -15,6 +15,8 @@ const leaveRoutes = require('../leaveRoutes');
 const assetRoutes = require('../assetRoutes');
 const notificationRoutes = require('../notificationRoutes');
 const auditRoutes = require('../auditRoutes');
+const attendanceRoutes = require('../attendanceRoutes');
+const salaryRoutes = require('../salaryRoutes');
 const healthController = require('../../controllers/healthController');
 const protect = require('../../middleware/authMiddleware');
 const authorize = require('../../middleware/authorize');
@@ -36,5 +38,7 @@ router.use('/leave', leaveRoutes);
 router.use('/assets', assetRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/audit-logs', auditRoutes);
+router.use('/attendance', attendanceRoutes);
+router.use('/salary', salaryRoutes);
 
 module.exports = router;

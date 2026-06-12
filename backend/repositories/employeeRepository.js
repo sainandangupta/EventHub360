@@ -2,12 +2,12 @@ const pool = require('../config/db');
 
 const employeeRepository = {
   // Create profile
-  async createEmployee(userId, departmentId, phone, address, designation, salary) {
+  async createEmployee(userId, departmentId, phone, address, designation, salary, city, workMode, status, joiningDate) {
     const result = await pool.query(
-      `INSERT INTO employee_profiles(user_id, department_id, phone, address, designation, salary)
-       VALUES($1, $2, $3, $4, $5, $6)
+      `INSERT INTO employee_profiles(user_id, department_id, phone, address, designation, salary, city, work_mode, status, joining_date)
+       VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE(NULLIF($10, '')::DATE, CURRENT_DATE))
        RETURNING *`,
-      [userId, departmentId, phone, address, designation, salary]
+      [userId, departmentId, phone, address, designation, salary, city || null, workMode || 'offline', status || 'active', joiningDate || null]
     );
     return result.rows[0];
   },
@@ -29,7 +29,7 @@ const employeeRepository = {
   },
 
   // Get all profiles with pagination, search, filter, sort
-  async getAllEmployees({ search, department_id, limit = 20, offset = 0, sortBy = 'created_at', sortOrder = 'DESC' } = {}) {
+  async getAllEmployees({ search, department_id, city, work_mode, status, limit = 20, offset = 0, sortBy = 'created_at', sortOrder = 'DESC' } = {}) {
     let query = `
       SELECT 
         ep.id,
@@ -40,7 +40,16 @@ const employeeRepository = {
         ep.designation,
         ep.salary,
         ep.phone,
-        ep.created_at
+        ep.created_at,
+        ep.city,
+        ep.work_mode,
+        ep.status,
+        ep.joining_date,
+        COALESCE((
+          SELECT ROUND(COUNT(*) FILTER (WHERE status IN ('present', 'late', 'half_day'))::NUMERIC / NULLIF(COUNT(*), 0)::NUMERIC * 100, 1)
+          FROM attendance_records
+          WHERE employee_id = ep.id
+        ), 100.0) AS attendance_percentage
       FROM employee_profiles ep
       INNER JOIN users u ON ep.user_id = u.id
       INNER JOIN departments d ON ep.department_id = d.id
@@ -50,7 +59,7 @@ const employeeRepository = {
     let idx = 1;
 
     if (search) {
-      query += ` AND (u.name ILIKE $${idx} OR u.email ILIKE $${idx} OR ep.designation ILIKE $${idx} OR ep.phone ILIKE $${idx})`;
+      query += ` AND (u.name ILIKE $${idx} OR u.email ILIKE $${idx} OR ep.designation ILIKE $${idx} OR ep.phone ILIKE $${idx} OR ep.city ILIKE $${idx})`;
       params.push(`%${search}%`);
       idx++;
     }
@@ -59,8 +68,32 @@ const employeeRepository = {
       params.push(department_id);
       idx++;
     }
+    if (city) {
+      query += ` AND ep.city = $${idx}`;
+      params.push(city);
+      idx++;
+    }
+    if (work_mode) {
+      query += ` AND ep.work_mode = $${idx}`;
+      params.push(work_mode);
+      idx++;
+    }
+    if (status) {
+      query += ` AND ep.status = $${idx}`;
+      params.push(status);
+      idx++;
+    }
 
-    const sortMap = { salary: 'ep.salary', name: 'u.name', created_at: 'ep.created_at', designation: 'ep.designation' };
+    const sortMap = { 
+      salary: 'ep.salary', 
+      name: 'u.name', 
+      created_at: 'ep.created_at', 
+      designation: 'ep.designation',
+      joining_date: 'ep.joining_date',
+      city: 'ep.city',
+      work_mode: 'ep.work_mode',
+      status: 'ep.status'
+    };
     const safeSort = sortMap[sortBy] || 'ep.created_at';
     const safeOrder = ['ASC', 'DESC'].includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'DESC';
 
@@ -69,13 +102,29 @@ const employeeRepository = {
     const countParams = [];
     let cIdx = 1;
     if (search) {
-      countQuery += ` AND (u.name ILIKE $${cIdx} OR u.email ILIKE $${cIdx} OR ep.designation ILIKE $${cIdx} OR ep.phone ILIKE $${cIdx})`;
+      countQuery += ` AND (u.name ILIKE $${cIdx} OR u.email ILIKE $${cIdx} OR ep.designation ILIKE $${cIdx} OR ep.phone ILIKE $${cIdx} OR ep.city ILIKE $${cIdx})`;
       countParams.push(`%${search}%`);
       cIdx++;
     }
     if (department_id) {
       countQuery += ` AND ep.department_id = $${cIdx}`;
       countParams.push(department_id);
+      cIdx++;
+    }
+    if (city) {
+      countQuery += ` AND ep.city = $${cIdx}`;
+      countParams.push(city);
+      cIdx++;
+    }
+    if (work_mode) {
+      countQuery += ` AND ep.work_mode = $${cIdx}`;
+      countParams.push(work_mode);
+      cIdx++;
+    }
+    if (status) {
+      countQuery += ` AND ep.status = $${cIdx}`;
+      countParams.push(status);
+      cIdx++;
     }
 
     const countResult = await pool.query(countQuery, countParams);
@@ -132,13 +181,14 @@ const employeeRepository = {
   },
 
   // Update profile
-  async updateEmployee(id, departmentId, phone, address, designation, salary) {
+  async updateEmployee(id, departmentId, phone, address, designation, salary, city, workMode, status, joiningDate) {
     const result = await pool.query(
       `UPDATE employee_profiles 
-       SET department_id = $1, phone = $2, address = $3, designation = $4, salary = $5
-       WHERE id = $6
+       SET department_id = $1, phone = $2, address = $3, designation = $4, salary = $5,
+           city = $6, work_mode = $7, status = $8, joining_date = COALESCE(NULLIF($9, '')::DATE, joining_date)
+       WHERE id = $10
        RETURNING *`,
-      [departmentId, phone, address, designation, salary, id]
+      [departmentId, phone, address, designation, salary, city || null, workMode || 'offline', status || 'active', joiningDate || null, id]
     );
     return result.rows[0];
   },
@@ -166,6 +216,7 @@ const employeeRepository = {
   // Get basic stats including assets and chart trends
   async getDashboardStats() {
     const employees = await pool.query('SELECT COUNT(*) as count FROM employee_profiles');
+    const activeEmployees = await pool.query("SELECT COUNT(*) as count FROM employee_profiles WHERE status = 'active'");
     const departments = await pool.query('SELECT COUNT(*) as count FROM departments');
     const skills = await pool.query('SELECT COUNT(*) as count FROM skills');
     const images = await pool.query('SELECT COUNT(*) as count FROM employee_images');
@@ -191,15 +242,77 @@ const employeeRepository = {
       LIMIT 12
     `);
 
+    // Work Mode distribution (for Donut Chart)
+    const workModeDistribution = await pool.query(`
+      SELECT COALESCE(work_mode, 'offline') AS name, COUNT(*)::int AS count
+      FROM employee_profiles
+      GROUP BY work_mode
+    `);
+
+    // City-wise distribution (for Bar Chart)
+    const cityDistribution = await pool.query(`
+      SELECT COALESCE(city, 'Unspecified') AS name, COUNT(*)::int AS count
+      FROM employee_profiles
+      GROUP BY city
+      ORDER BY count DESC
+      LIMIT 10
+    `);
+
+    // Today's attendance counts
+    const attendanceToday = await pool.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'present')::int AS present_today,
+        COUNT(*) FILTER (WHERE status = 'absent')::int AS absent_today,
+        COUNT(*) FILTER (WHERE status = 'late')::int AS late_today,
+        COUNT(*) FILTER (WHERE status = 'half_day')::int AS half_day_today,
+        COUNT(*)::int AS total_today
+      FROM attendance_records
+      WHERE date = CURRENT_DATE
+    `);
+
+    // Overall attendance percentage
+    const overallAttendance = await pool.query(`
+      SELECT 
+        CASE WHEN COUNT(*) > 0 
+          THEN ROUND(COUNT(*) FILTER (WHERE status IN ('present', 'late', 'half_day'))::NUMERIC / COUNT(*)::NUMERIC * 100, 1)
+          ELSE 100.0 END AS overall_percentage
+      FROM attendance_records
+    `);
+
+    // Monthly salary totals
+    const salaryTotal = await pool.query(`
+      SELECT COALESCE(SUM(salary), 0)::numeric AS total_payroll_cost
+      FROM employee_profiles
+      WHERE status = 'active'
+    `);
+
+    // Attendance trend for the last 7 days (for Line Chart)
+    const attendanceTrend = await pool.query(`
+      SELECT TO_CHAR(date, 'DD Mon') AS day, 
+             COUNT(*) FILTER (WHERE status IN ('present', 'late', 'half_day'))::int AS present,
+             COUNT(*) FILTER (WHERE status = 'absent')::int AS absent
+      FROM attendance_records
+      WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY date, TO_CHAR(date, 'DD Mon')
+      ORDER BY date ASC
+    `);
+
     return {
       total_employees: parseInt(employees.rows[0].count),
+      active_employees: parseInt(activeEmployees.rows[0].count),
       total_departments: parseInt(departments.rows[0].count),
       total_skills: parseInt(skills.rows[0].count),
       total_images: parseInt(images.rows[0].count),
       total_assets: parseInt(assets.rows[0].count || 0),
       allocated_assets: parseInt(allocatedAssets.rows[0].count || 0),
       department_distribution: deptDistribution.rows,
-      hiring_trend: hiringTrend.rows
+      hiring_trend: hiringTrend.rows,
+      work_mode_distribution: workModeDistribution.rows,
+      city_distribution: cityDistribution.rows,
+      attendance_today: attendanceToday.rows[0] || { present_today: 0, absent_today: 0, late_today: 0, half_day_today: 0, total_today: 0 },
+      overall_attendance_pct: parseFloat(overallAttendance.rows[0].overall_percentage || 100.0),
+      total_payroll_cost: parseFloat(salaryTotal.rows[0].total_payroll_cost || 0),
+      attendance_trend: attendanceTrend.rows
     };
   }
 

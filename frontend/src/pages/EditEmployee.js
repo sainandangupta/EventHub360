@@ -12,7 +12,11 @@ export default function EditEmployee() {
     address: "",
     designation: "",
     salary: "",
-    department_id: ""
+    department_id: "",
+    city: "",
+    work_mode: "offline",
+    status: "active",
+    joining_date: ""
   });
 
   const [skills, setSkills] = useState([]);
@@ -36,7 +40,11 @@ export default function EditEmployee() {
           address: res.data.address,
           designation: res.data.designation,
           salary: res.data.salary,
-          department_id: res.data.department_id
+          department_id: res.data.department_id,
+          city: res.data.city || "",
+          work_mode: res.data.work_mode || "offline",
+          status: res.data.status || "active",
+          joining_date: res.data.joining_date ? res.data.joining_date.split('T')[0] : ""
         });
         setSkills(res.data.skills.map(s => s.id));
         setLoading(false);
@@ -158,6 +166,50 @@ export default function EditEmployee() {
             value={form.department_id}
             onChange={handleChange}
             required
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+          <FormInput
+            label="City"
+            name="city"
+            type="text"
+            placeholder="e.g. New York"
+            value={form.city}
+            onChange={handleChange}
+          />
+
+          <FormInput
+            label="Joining Date"
+            name="joining_date"
+            type="date"
+            value={form.joining_date}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem', marginBottom: '1.5rem' }}>
+          <FormSelect
+            label="Work Mode"
+            name="work_mode"
+            options={[
+              { value: 'online', label: 'Online' },
+              { value: 'offline', label: 'Offline' },
+              { value: 'hybrid', label: 'Hybrid' }
+            ]}
+            value={form.work_mode}
+            onChange={handleChange}
+          />
+
+          <FormSelect
+            label="Status"
+            name="status"
+            options={[
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' }
+            ]}
+            value={form.status}
+            onChange={handleChange}
           />
         </div>
 

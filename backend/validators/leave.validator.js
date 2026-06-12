@@ -17,7 +17,7 @@ const approveLeaveSchema = Joi.object({
 
 const leaveQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(1000).default(20),
   search: Joi.string().max(100).allow('').optional(),
   status: Joi.string().valid('pending', 'approved', 'rejected', 'cancelled').optional(),
   sortBy: Joi.string().valid('from_date', 'created_at', 'status', 'total_days').default('created_at'),

@@ -1,83 +1,204 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { showToast } from "../components/ui";
 
 function Signup() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError("");
   };
 
+  const validate = () => {
+    if (!form.name.trim()) {
+      setError("Full name is required");
+      return false;
+    }
+    if (!form.email.trim()) {
+      setError("Email is required");
+      return false;
+    }
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return false;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) return;
+
     setLoading(true);
     setError("");
-    
+    setSuccess("");
+
     try {
-      // Signup
-      const signupRes = await axios.post("http://localhost:5000/api/auth/signup", form);
-      
+      const signupRes = await axios.post("http://localhost:5000/api/auth/signup", {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+      });
+
       // Send verification email
-      if (signupRes.data.user.id) {
+      if (signupRes.data.user?.id) {
         await axios.post("http://localhost:5000/api/email/send-verification", {
-          userId: signupRes.data.user.id
-        });
+          userId: signupRes.data.user.id,
+        }).catch(() => {}); // Don't block on email failure
       }
 
-      setSuccess("Signup successful! Check your email to verify your account.");
-      setForm({ name: "", email: "", password: "" });
+      setSuccess("Account created successfully! Check your email to verify your account.");
+      showToast({ message: "Account created successfully!", type: "success" });
+      setForm({ name: "", email: "", password: "", confirmPassword: "" });
       setLoading(false);
     } catch (err) {
-      setError(err.response?.data?.message || "Signup failed");
+      const msg = err.response?.data?.message || "Registration failed. Please try again.";
+      setError(msg);
+      showToast({ message: msg, type: "error" });
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "50px auto", padding: "20px", border: "1px solid #ccc", borderRadius: "8px" }}>
-      <h2>📝 Signup</h2>
-      {error && <div style={{ color: "red", marginBottom: "10px" }}>⚠️ {error}</div>}
-      {success && <div style={{ color: "green", marginBottom: "10px" }}>✅ {success}</div>}
-      <form onSubmit={handleSubmit}>
-        <input 
-          name="name" 
-          placeholder="Full Name" 
-          onChange={handleChange} 
-          required 
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd" }}
-        /><br/>
-        <input 
-          name="email" 
-          type="email"
-          placeholder="Email" 
-          onChange={handleChange} 
-          required 
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd" }}
-        /><br/>
-        <input 
-          type="password" 
-          name="password" 
-          placeholder="Password" 
-          onChange={handleChange} 
-          required 
-          style={{ width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "4px", border: "1px solid #ddd" }}
-        /><br/>
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{ width: "100%", padding: "10px", backgroundColor: "#28a745", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
-        >
-          {loading ? "Registering..." : "Register"}
-        </button>
-      </form>
-      <hr />
-      <p>Already have an account? <Link to="/">Login here</Link></p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <span className="auth-logo-icon">📝</span>
+          </div>
+          <h1 className="auth-title">Create Account</h1>
+          <p className="auth-subtitle">Join the employee management portal</p>
+        </div>
+
+        {error && (
+          <div className="auth-alert auth-alert-error">
+            <span className="auth-alert-icon">⚠️</span>
+            <span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div className="auth-alert auth-alert-success">
+            <span className="auth-alert-icon">✅</span>
+            <span>{success}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="signup-name">Full Name</label>
+            <input
+              id="signup-name"
+              name="name"
+              placeholder="John Doe"
+              value={form.name}
+              onChange={handleChange}
+              required
+              autoComplete="name"
+              className="auth-input"
+            />
+          </div>
+
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="signup-email">Email Address</label>
+            <input
+              id="signup-email"
+              name="email"
+              type="email"
+              placeholder="you@company.com"
+              value={form.email}
+              onChange={handleChange}
+              required
+              autoComplete="email"
+              className="auth-input"
+            />
+          </div>
+
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="signup-password">Password</label>
+            <div className="auth-input-wrapper">
+              <input
+                id="signup-password"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Minimum 6 characters"
+                value={form.password}
+                onChange={handleChange}
+                required
+                minLength={6}
+                autoComplete="new-password"
+                className="auth-input"
+              />
+              <button
+                type="button"
+                className="auth-toggle-password"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </div>
+
+          <div className="auth-field">
+            <label className="auth-label" htmlFor="signup-confirm-password">Confirm Password</label>
+            <div className="auth-input-wrapper">
+              <input
+                id="signup-confirm-password"
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="Re-enter your password"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                required
+                autoComplete="new-password"
+                className="auth-input"
+              />
+              <button
+                type="button"
+                className="auth-toggle-password"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                tabIndex={-1}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+            {form.confirmPassword && form.password !== form.confirmPassword && (
+              <span className="auth-field-error">Passwords do not match</span>
+            )}
+            {form.confirmPassword && form.password === form.confirmPassword && form.confirmPassword.length > 0 && (
+              <span className="auth-field-success">Passwords match ✓</span>
+            )}
+          </div>
+
+          <button type="submit" disabled={loading} className="auth-btn auth-btn-success">
+            {loading ? (
+              <><span className="auth-spinner" /> Creating Account...</>
+            ) : (
+              "Create Account"
+            )}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          <span>Already have an account?</span>
+          <Link to="/" className="auth-link">Sign In</Link>
+        </div>
+      </div>
     </div>
   );
 }
+
 export default Signup;

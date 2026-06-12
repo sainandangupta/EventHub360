@@ -54,15 +54,30 @@ export default function FormTable({
         </thead>
         <tbody>
           {loading ? (
-            <tr>
-              <td 
-                colSpan={headers.length + (actions ? 1 : 0)} 
-                style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}
-              >
-                <div className="loading-spinner" style={{ display: 'inline-block', width: '2rem', height: '2rem', border: '3px solid var(--border-color)', borderTop: '3px solid var(--color-primary-light)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                <div style={{ marginTop: '0.5rem' }}>Loading data...</div>
-              </td>
-            </tr>
+            Array.from({ length: 5 }).map((_, rIdx) => (
+              <tr key={rIdx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                {headers.map((header, cIdx) => (
+                  <td key={cIdx} style={{ padding: '1.25rem 1.25rem' }}>
+                    <div 
+                      className="skeleton-pulse" 
+                      style={{ 
+                        height: '1.2rem', 
+                        backgroundColor: 'var(--border-color)', 
+                        borderRadius: 'var(--radius-sm)',
+                        width: cIdx === 0 ? '40%' : cIdx === 1 ? '75%' : '60%',
+                        opacity: 0.6,
+                        animation: 'pulse 1.5s infinite ease-in-out'
+                      }} 
+                    />
+                  </td>
+                ))}
+                {actions && (
+                  <td style={{ padding: '1.25rem 1.25rem' }}>
+                    <div className="skeleton-pulse" style={{ height: '1.8rem', backgroundColor: 'var(--border-color)', borderRadius: 'var(--radius-sm)', width: '4rem', marginLeft: 'auto', opacity: 0.6, animation: 'pulse 1.5s infinite ease-in-out' }} />
+                  </td>
+                )}
+              </tr>
+            ))
           ) : data.length === 0 ? (
             <tr>
               <td 

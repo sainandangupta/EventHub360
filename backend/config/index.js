@@ -37,7 +37,8 @@ const config = {
   upload: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE, 10) || 5 * 1024 * 1024
   },
-  logLevel: process.env.LOG_LEVEL || 'info'
+  logLevel: process.env.LOG_LEVEL || 'info',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
 };
 
 module.exports = config;

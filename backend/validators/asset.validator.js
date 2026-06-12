@@ -25,7 +25,7 @@ const updateAssetStatusSchema = Joi.object({
 
 const assetQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(20),
+  limit: Joi.number().integer().min(1).max(1000).default(20),
   search: Joi.string().max(100).allow('').optional(),
   status: Joi.string().valid('Available', 'Allocated', 'Returned', 'Damaged', 'Lost').optional(),
   sortField: Joi.string().valid('id', 'asset_code', 'asset_name', 'purchase_cost', 'status').default('id'),

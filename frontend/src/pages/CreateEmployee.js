@@ -11,7 +11,11 @@ export default function CreateEmployee() {
     address: "",
     designation: "",
     salary: "",
-    department_id: ""
+    department_id: "",
+    city: "",
+    work_mode: "offline",
+    status: "active",
+    joining_date: new Date().toISOString().split('T')[0]
   });
 
   const [skills, setSkills] = useState([]);
@@ -167,6 +171,50 @@ export default function CreateEmployee() {
             value={form.department_id}
             onChange={handleChange}
             required
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+          <FormInput
+            label="City"
+            name="city"
+            type="text"
+            placeholder="e.g. New York"
+            value={form.city}
+            onChange={handleChange}
+          />
+
+          <FormInput
+            label="Joining Date"
+            name="joining_date"
+            type="date"
+            value={form.joining_date}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem', marginBottom: '1.5rem' }}>
+          <FormSelect
+            label="Work Mode"
+            name="work_mode"
+            options={[
+              { value: 'online', label: 'Online' },
+              { value: 'offline', label: 'Offline' },
+              { value: 'hybrid', label: 'Hybrid' }
+            ]}
+            value={form.work_mode}
+            onChange={handleChange}
+          />
+
+          <FormSelect
+            label="Status"
+            name="status"
+            options={[
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' }
+            ]}
+            value={form.status}
+            onChange={handleChange}
           />
         </div>
 
