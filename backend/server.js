@@ -15,7 +15,10 @@ const logger = require('./utils/logger');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: config.frontendUrl,
+  credentials: true
+}));
 app.use(express.json());
 app.use(helmet());
 app.use(requestLogger);

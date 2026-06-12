@@ -5,6 +5,19 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
 import store from './redux/store';
+import axios from 'axios';
+
+// Intercept all Axios requests to rewrite local backend URLs in production
+axios.interceptors.request.use(
+  (config) => {
+    const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    if (config.url && config.url.startsWith('http://localhost:5000')) {
+      config.url = config.url.replace('http://localhost:5000', apiBaseUrl);
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

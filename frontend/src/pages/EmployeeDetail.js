@@ -64,7 +64,7 @@ function EmployeeDetail() {
           <strong>Uploaded Files:</strong>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "10px", marginTop: "10px" }}>
             {employee.images.map(img => (
-              <a key={img.id} href={`http://localhost:5000${img.image_url}`} target="_blank" rel="noreferrer" style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px", textAlign: "center", textDecoration: "none", color: "#007bff" }}>
+              <a key={img.id} href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${img.image_url}`} target="_blank" rel="noreferrer" style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px", textAlign: "center", textDecoration: "none", color: "#007bff" }}>
                 📄 View
               </a>
             ))}
