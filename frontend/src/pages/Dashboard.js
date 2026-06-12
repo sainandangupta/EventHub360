@@ -57,16 +57,14 @@ export default function Dashboard() {
     // Fetch employee dashboard stats (which now includes assets and chart distributions)
     api.get("/api/employees/stats/dashboard", { headers })
       .then(res => setStats(res.data))
-      .catch(err => /* silenced in production */);
+      .catch(() => {});
 
     // Fetch leave dashboard stats
     api.get("/api/leave/dashboard-stats", { headers })
       .then(res => {
         setLeaveStats(res.data);
       })
-      .catch(err => {
-        /* silenced in production */
-      });
+      .catch(() => {});
 
     // Fetch monthly salary summary
     api.get("/api/salary/reports/monthly-summary", { headers })
@@ -78,8 +76,7 @@ export default function Dashboard() {
         setPayrollSummary(formatted);
         setLoading(false);
       })
-      .catch(err => {
-        /* silenced in production */
+      .catch(() => {
         setLoading(false);
       });
   }, []);
