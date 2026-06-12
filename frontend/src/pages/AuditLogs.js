@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import FormTable from '../components/ui/FormTable';
 import FormSelect from '../components/ui/FormSelect';
 
@@ -18,7 +18,7 @@ export default function AuditLogs() {
 
   const fetchLogs = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/audit-logs', {
+    api.get('/api/audit-logs', {
       params: { tableName, actionType, page, limit },
       headers: { Authorization: token }
     })

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import { showToast, StatCard } from '../components/ui';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -21,10 +21,10 @@ export default function AttendanceDashboard() {
   const fetchData = useCallback(async () => {
     try {
       const [todayRes, attendanceRes, statsRes, historyRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/attendance/today', { headers }),
-        axios.get(`http://localhost:5000/api/attendance/my-attendance?month=${selectedMonth}&year=${selectedYear}`, { headers }),
-        axios.get(`http://localhost:5000/api/attendance/stats?month=${selectedMonth}&year=${selectedYear}`, { headers }),
-        axios.get('http://localhost:5000/api/attendance/history?limit=50', { headers }),
+        api.get('/api/attendance/today', { headers }),
+        api.get(`/api/attendance/my-attendance?month=${selectedMonth}&year=${selectedYear}`, { headers }),
+        api.get(`/api/attendance/stats?month=${selectedMonth}&year=${selectedYear}`, { headers }),
+        api.get('/api/attendance/history?limit=50', { headers }),
       ]);
       setTodayStatus(todayRes.data);
       setAttendance(attendanceRes.data);
@@ -42,7 +42,7 @@ export default function AttendanceDashboard() {
   const handleCheckIn = async () => {
     setActionLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/attendance/check-in', {}, { headers });
+      await api.post('/api/attendance/check-in', {}, { headers });
       showToast({ message: 'Checked in successfully! ☀️', type: 'success' });
       fetchData();
     } catch (err) {
@@ -54,7 +54,7 @@ export default function AttendanceDashboard() {
   const handleCheckOut = async () => {
     setActionLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/attendance/check-out', {}, { headers });
+      await api.post('/api/attendance/check-out', {}, { headers });
       showToast({ message: 'Checked out successfully! 🌙', type: 'success' });
       fetchData();
     } catch (err) {

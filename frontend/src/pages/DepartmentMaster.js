@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 
 function DepartmentMaster() {
   const [departments, setDepartments] = useState([]);
@@ -15,7 +15,7 @@ function DepartmentMaster() {
 
   const fetchDepartments = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/departments");
+      const res = await api.get("/api/departments");
       setDepartments(res.data);
       setLoading(false);
     } catch (err) {
@@ -32,8 +32,8 @@ function DepartmentMaster() {
     e.preventDefault();
     
     try {
-      await axios.post(
-        "http://localhost:5000/api/departments",
+      await api.post(
+        "/api/departments",
         form,
         { headers: { Authorization: token } }
       );
@@ -49,7 +49,7 @@ function DepartmentMaster() {
     if (!window.confirm("Are you sure?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/departments/${id}`, {
+      await api.delete(`/api/departments/${id}`, {
         headers: { Authorization: token }
       });
       alert("Department deleted!");

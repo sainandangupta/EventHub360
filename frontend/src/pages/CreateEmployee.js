@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import FormInput from "../components/ui/FormInput";
 import FormSelect from "../components/ui/FormSelect";
 
@@ -29,12 +29,12 @@ export default function CreateEmployee() {
 
   useEffect(() => {
     // Fetch departments
-    axios.get("http://localhost:5000/api/departments", { headers: { Authorization: token } })
+    api.get("/api/departments", { headers: { Authorization: token } })
       .then(res => setDepartments(res.data))
       .catch(err => console.error(err));
 
     // Fetch skills
-    axios.get("http://localhost:5000/api/skills", { headers: { Authorization: token } })
+    api.get("/api/skills", { headers: { Authorization: token } })
       .then(res => setAllSkills(res.data))
       .catch(err => console.error(err));
   }, [token]);
@@ -62,8 +62,8 @@ export default function CreateEmployee() {
 
     try {
       // Create employee profile
-      const res = await axios.post(
-        "http://localhost:5000/api/employees",
+      const res = await api.post(
+        "/api/employees",
         {
           ...form,
           skills: skills
@@ -80,8 +80,8 @@ export default function CreateEmployee() {
           formData.append("images", images[i]);
         }
 
-        await axios.post(
-          `http://localhost:5000/api/employees/upload/${employeeId}`,
+        await api.post(
+          `/api/employees/upload/${employeeId}`,
           formData,
           {
             headers: {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { Link } from "react-router-dom";
 import { showToast } from "../components/ui";
 
@@ -21,7 +21,7 @@ function ForgotPassword() {
     setMessage("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/password/forgot-password", { email });
+      const res = await api.post("/api/password/forgot-password", { email });
       setMessage(res.data.message || "Password reset link has been sent to your email.");
       setSent(true);
       showToast({ message: "Reset link sent! Check your email.", type: "success" });

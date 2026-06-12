@@ -25,7 +25,7 @@ router.post("/send-verification", async (req, res) => {
 
     // TODO: Send email with verification link
     const verificationLink = `http://localhost:3000/verify-email/${verificationToken}`;
-    console.log("Verification Link:", verificationLink); // For testing
+    console.log("Verification Link:", verificationLink); // For development only
 
     res.json({
       message: "Verification email sent",

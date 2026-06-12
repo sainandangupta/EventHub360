@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import * as XLSX from 'xlsx';
 import FormTable from '../components/ui/FormTable';
 import FormInput from '../components/ui/FormInput';
@@ -32,7 +32,7 @@ export default function ReportsDashboard() {
 
   useEffect(() => {
     // Fetch departments for filtering dropdown
-    axios.get('http://localhost:5000/api/departments', { headers: { Authorization: token } })
+    api.get('/api/departments', { headers: { Authorization: token } })
       .then(res => setDepartments(res.data))
       .catch(err => console.error(err));
   }, [token]);
@@ -43,15 +43,15 @@ export default function ReportsDashboard() {
     
     let endpoint = '';
     if (reportType === 'employees') {
-      endpoint = 'http://localhost:5000/api/employees';
+      endpoint = '/api/employees';
     } else if (reportType === 'leaves') {
       // Fetch leave balances or summary
-      endpoint = 'http://localhost:5000/api/leave/reports/leave-balance';
+      endpoint = '/api/leave/reports/leave-balance';
     } else if (reportType === 'assets') {
-      endpoint = 'http://localhost:5000/api/assets/report';
+      endpoint = '/api/assets/report';
     }
 
-    axios.get(endpoint, { headers: { Authorization: token } })
+    api.get(endpoint, { headers: { Authorization: token } })
       .then(res => {
         const reportRows = Array.isArray(res.data) ? res.data : (res.data.data || []);
         setData(reportRows);

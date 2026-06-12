@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -17,14 +17,14 @@ function AdminDashboard() {
     }
 
     // Fetch stats
-    axios.get("http://localhost:5000/api/admin/stats", {
+    api.get("/api/admin/stats", {
       headers: { Authorization: token },
     })
       .then((res) => setStats(res.data))
       .catch((err) => setError(err.response?.data?.message || "Failed to load stats"));
 
     // Fetch users
-    axios.get("http://localhost:5000/api/admin/users", {
+    api.get("/api/admin/users", {
       headers: { Authorization: token },
     })
       .then((res) => {
@@ -40,7 +40,7 @@ function AdminDashboard() {
   const handleRoleChange = async (userId, newRole) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.put(`http://localhost:5000/api/admin/users/${userId}/role`, 
+      await api.put(`/api/admin/users/${userId}/role`, 
         { role: newRole },
         { headers: { Authorization: token } }
       );
@@ -56,7 +56,7 @@ function AdminDashboard() {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     
     try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${userId}`,
+      await api.delete(`/api/admin/users/${userId}`,
         { headers: { Authorization: token } }
       );
       setUsers(users.filter(u => u.id !== userId));

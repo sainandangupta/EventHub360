@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import FormInput from "../components/ui/FormInput";
 import FormSelect from "../components/ui/FormSelect";
 
@@ -30,7 +30,7 @@ export default function EditEmployee() {
 
   useEffect(() => {
     // Fetch employee data
-    axios.get(`http://localhost:5000/api/employees/${id}`, {
+    api.get(`/api/employees/${id}`, {
       headers: { Authorization: token }
     })
       .then(res => {
@@ -55,12 +55,12 @@ export default function EditEmployee() {
       });
 
     // Fetch departments
-    axios.get("http://localhost:5000/api/departments", { headers: { Authorization: token } })
+    api.get("/api/departments", { headers: { Authorization: token } })
       .then(res => setDepartments(res.data))
       .catch(err => console.error(err));
 
     // Fetch skills
-    axios.get("http://localhost:5000/api/skills", { headers: { Authorization: token } })
+    api.get("/api/skills", { headers: { Authorization: token } })
       .then(res => setAllSkills(res.data))
       .catch(err => console.error(err));
   }, [id, token]);
@@ -82,8 +82,8 @@ export default function EditEmployee() {
     setLoading(true);
 
     try {
-      await axios.put(
-        `http://localhost:5000/api/employees/${id}`,
+      await api.put(
+        `/api/employees/${id}`,
         {
           ...form,
           skills: skills

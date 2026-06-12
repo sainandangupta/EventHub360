@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export default function EmployeeMasterDashboard() {
   const [employees, setEmployees] = useState([]);
@@ -23,8 +23,8 @@ export default function EmployeeMasterDashboard() {
     setLoading(true);
     try {
       const [empRes, deptRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/employees?limit=500', { headers }),
-        axios.get('http://localhost:5000/api/departments', { headers }),
+        api.get('/api/employees?limit=500', { headers }),
+        api.get('/api/departments', { headers }),
       ]);
       setEmployees(empRes.data.data || empRes.data || []);
       setDepartments(deptRes.data || []);

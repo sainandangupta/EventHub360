@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import { Link } from "react-router-dom";
 
 function EmailVerification() {
@@ -12,7 +12,7 @@ function EmailVerification() {
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        const res = await axios.post("http://localhost:5000/api/email/verify-email", { token });
+        const res = await api.post("/api/email/verify-email", { token });
         setMessage(res.data.message);
         setLoading(false);
       } catch (err) {

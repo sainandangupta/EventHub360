@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api";
 import { Link, useParams } from "react-router-dom";
 import { showToast } from "../components/ui";
 
@@ -16,7 +16,7 @@ function ResetPassword() {
 
   useEffect(() => {
     // Verify token on mount
-    axios.post("http://localhost:5000/api/password/verify-reset-token", { token })
+    api.post("/api/password/verify-reset-token", { token })
       .then(() => {
         setTokenValid(true);
         setValidating(false);
@@ -49,7 +49,7 @@ function ResetPassword() {
     setError("");
 
     try {
-      await axios.post("http://localhost:5000/api/password/reset-password", {
+      await api.post("/api/password/reset-password", {
         token,
         password: form.password,
       });

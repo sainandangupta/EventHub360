@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 
 function SkillsMaster() {
   const [skills, setSkills] = useState([]);
@@ -15,7 +15,7 @@ function SkillsMaster() {
 
   const fetchSkills = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/skills");
+      const res = await api.get("/api/skills");
       setSkills(res.data);
       setLoading(false);
     } catch (err) {
@@ -32,8 +32,8 @@ function SkillsMaster() {
     e.preventDefault();
     
     try {
-      await axios.post(
-        "http://localhost:5000/api/skills",
+      await api.post(
+        "/api/skills",
         form,
         { headers: { Authorization: token } }
       );
@@ -49,7 +49,7 @@ function SkillsMaster() {
     if (!window.confirm("Are you sure?")) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/skills/${id}`, {
+      await api.delete(`/api/skills/${id}`, {
         headers: { Authorization: token }
       });
       alert("Skill deleted!");

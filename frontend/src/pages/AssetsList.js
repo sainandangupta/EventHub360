@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 import FormTable from '../components/ui/FormTable';
 import FormInput from '../components/ui/FormInput';
 import FormSelect from '../components/ui/FormSelect';
@@ -41,7 +41,7 @@ export default function AssetsList() {
 
   const fetchAssets = () => {
     setLoading(true);
-    axios.get(`http://localhost:5000/api/assets`, {
+    api.get(`/api/assets`, {
       params: { search, status, page, limit },
       headers: { Authorization: token }
     })
@@ -64,7 +64,7 @@ export default function AssetsList() {
   useEffect(() => {
     if (showAllocateModal) {
       // Fetch employee list for allocation dropdown
-      axios.get('http://localhost:5000/api/employees', {
+      api.get('/api/employees', {
         headers: { Authorization: token }
       })
         .then(res => setEmployees(res.data.data || res.data))
@@ -81,7 +81,7 @@ export default function AssetsList() {
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/assets', createForm, {
+      await api.post('/api/assets', createForm, {
         headers: { Authorization: token }
       });
       alert('Asset created successfully!');
@@ -96,7 +96,7 @@ export default function AssetsList() {
   const handleAllocateSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/assets/allocate', {
+      await api.post('/api/assets/allocate', {
         asset_id: selectedAsset.id,
         employee_id: parseInt(allocationForm.employee_id),
         return_date: allocationForm.return_date || null

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 
-const API = 'http://localhost:5000/api/employees';
+const API = '/api/employees';
 const getHeaders = () => ({ Authorization: localStorage.getItem('token') });
 
 export default function useEmployee() {
@@ -12,7 +12,7 @@ export default function useEmployee() {
   const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(API, { headers: getHeaders() });
+      const res = await api.get(API, { headers: getHeaders() });
       const list = res.data.data || res.data;
       setEmployees(list);
       return list;
@@ -24,22 +24,22 @@ export default function useEmployee() {
   }, []);
 
   const getEmployee = async (id) => {
-    const res = await axios.get(`${API}/${id}`, { headers: getHeaders() });
+    const res = await api.get(`${API}/${id}`, { headers: getHeaders() });
     return res.data;
   };
 
   const createEmployee = async (data) => {
-    const res = await axios.post(API, data, { headers: getHeaders() });
+    const res = await api.post(API, data, { headers: getHeaders() });
     return res.data;
   };
 
   const updateEmployee = async (id, data) => {
-    const res = await axios.put(`${API}/${id}`, data, { headers: getHeaders() });
+    const res = await api.put(`${API}/${id}`, data, { headers: getHeaders() });
     return res.data;
   };
 
   const deleteEmployee = async (id) => {
-    const res = await axios.delete(`${API}/${id}`, { headers: getHeaders() });
+    const res = await api.delete(`${API}/${id}`, { headers: getHeaders() });
     return res.data;
   };
 

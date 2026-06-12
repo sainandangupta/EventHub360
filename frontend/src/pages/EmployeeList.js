@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api";
 
 function EmployeeList() {
   const [employees, setEmployees] = useState([]);
@@ -9,7 +9,7 @@ function EmployeeList() {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    axios.get("http://localhost:5000/api/employees", {
+    api.get("/api/employees", {
       headers: { Authorization: token }
     })
       .then(res => {
@@ -27,7 +27,7 @@ function EmployeeList() {
 
     const token = localStorage.getItem("token");
     try {
-      await axios.delete(`http://localhost:5000/api/employees/${id}`, {
+      await api.delete(`/api/employees/${id}`, {
         headers: { Authorization: token }
       });
       setEmployees(employees.filter(e => e.id !== id));

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api";
 import { StatCard, Button } from "../components/ui";
 import {
   ResponsiveContainer,
@@ -46,7 +46,7 @@ export default function Dashboard() {
     const headers = { Authorization: token };
 
     // Fetch user profile
-    axios.get("http://localhost:5000/api/user/profile", { headers })
+    api.get("/api/user/profile", { headers })
       .then((res) => {
         setUser(res.data);
       })
@@ -55,21 +55,21 @@ export default function Dashboard() {
       });
 
     // Fetch employee dashboard stats (which now includes assets and chart distributions)
-    axios.get("http://localhost:5000/api/employees/stats/dashboard", { headers })
+    api.get("/api/employees/stats/dashboard", { headers })
       .then(res => setStats(res.data))
-      .catch(err => console.log("Stats Fetch Error:", err));
+      .catch(err => /* silenced in production */);
 
     // Fetch leave dashboard stats
-    axios.get("http://localhost:5000/api/leave/dashboard-stats", { headers })
+    api.get("/api/leave/dashboard-stats", { headers })
       .then(res => {
         setLeaveStats(res.data);
       })
       .catch(err => {
-        console.log("Leave Stats Fetch Error:", err);
+        /* silenced in production */
       });
 
     // Fetch monthly salary summary
-    axios.get("http://localhost:5000/api/salary/reports/monthly-summary", { headers })
+    api.get("/api/salary/reports/monthly-summary", { headers })
       .then(res => {
         const formatted = (res.data || []).map(item => ({
           period: `${MONTH_NAMES[item.month - 1] || item.month} ${item.year}`,
@@ -79,7 +79,7 @@ export default function Dashboard() {
         setLoading(false);
       })
       .catch(err => {
-        console.log("Salary Summary Fetch Error:", err);
+        /* silenced in production */
         setLoading(false);
       });
   }, []);

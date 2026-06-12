@@ -7,6 +7,13 @@ yarn.lock
 .env
 .env.local
 .env.*.local
+.env.development
+.env.staging
+.env.production
+
+# Uploads & Backups
+uploads/
+backups/
 
 # Logs
 logs/

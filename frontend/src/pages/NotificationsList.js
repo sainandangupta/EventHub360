@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api';
 
 export default function NotificationsList() {
   const [notifications, setNotifications] = useState([]);
@@ -11,7 +11,7 @@ export default function NotificationsList() {
 
   const fetchNotifications = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/notifications', {
+    api.get('/api/notifications', {
       headers: { Authorization: token }
     })
       .then(res => {
@@ -31,7 +31,7 @@ export default function NotificationsList() {
   }, [token]);
 
   const handleMarkRead = (id) => {
-    axios.put(`http://localhost:5000/api/notifications/${id}/read`, {}, {
+    api.put(`/api/notifications/${id}/read`, {}, {
       headers: { Authorization: token }
     })
       .then(() => {
@@ -43,7 +43,7 @@ export default function NotificationsList() {
   };
 
   const handleMarkAllRead = () => {
-    axios.put('http://localhost:5000/api/notifications/mark-all', {}, {
+    api.put('/api/notifications/mark-all', {}, {
       headers: { Authorization: token }
     })
       .then(() => {
@@ -56,7 +56,7 @@ export default function NotificationsList() {
 
   const handleDelete = (id) => {
     if (!window.confirm('Delete this notification?')) return;
-    axios.delete(`http://localhost:5000/api/notifications/${id}`, {
+    api.delete(`/api/notifications/${id}`, {
       headers: { Authorization: token }
     })
       .then(() => {

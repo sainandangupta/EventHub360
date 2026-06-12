@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
+import api, { API_BASE_URL } from "../api";
 
 function EmployeeDetail() {
   const { id } = useParams();
@@ -11,7 +11,7 @@ function EmployeeDetail() {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/employees/${id}`, {
+    api.get(`/api/employees/${id}`, {
       headers: { Authorization: token }
     })
       .then(res => {
@@ -64,7 +64,7 @@ function EmployeeDetail() {
           <strong>Uploaded Files:</strong>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: "10px", marginTop: "10px" }}>
             {employee.images.map(img => (
-              <a key={img.id} href={`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}${img.image_url}`} target="_blank" rel="noreferrer" style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px", textAlign: "center", textDecoration: "none", color: "#007bff" }}>
+              <a key={img.id} href={`${API_BASE_URL}${img.image_url}`} target="_blank" rel="noreferrer" style={{ padding: "10px", border: "1px solid #ddd", borderRadius: "4px", textAlign: "center", textDecoration: "none", color: "#007bff" }}>
                 📄 View
               </a>
             ))}

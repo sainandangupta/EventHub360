@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api';
 import * as XLSX from 'xlsx';
 import { showToast } from '../components/ui';
 import {
@@ -67,7 +67,7 @@ export default function SalaryDashboard() {
 
   // Fetch initial employee list
   useEffect(() => {
-    axios.get('http://localhost:5000/api/employees?limit=200', { headers })
+    api.get('/api/employees?limit=200', { headers })
       .then(res => setEmployees(res.data.data || res.data || []))
       .catch(err => console.error(err));
 
@@ -75,7 +75,7 @@ export default function SalaryDashboard() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchMonthlySummary = () => {
-    axios.get('http://localhost:5000/api/salary/reports/monthly-summary', { headers })
+    api.get('/api/salary/reports/monthly-summary', { headers })
       .then(res => {
         // Reverse to display chronological order in charts
         const formatted = (res.data || []).map(item => ({
@@ -105,7 +105,7 @@ export default function SalaryDashboard() {
     }
 
     setLoading(true);
-    axios.get(`http://localhost:5000/api/salary/structure/${selectedEmpId}`, { headers })
+    api.get(`/api/salary/structure/${selectedEmpId}`, { headers })
       .then(res => {
         if (res.data && res.data.employee_id) {
           setStructure({
@@ -153,7 +153,7 @@ export default function SalaryDashboard() {
 
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/salary/structure', {
+      await api.post('/api/salary/structure', {
         employee_id: parseInt(selectedEmpId),
         ...structure
       }, { headers });
@@ -169,7 +169,7 @@ export default function SalaryDashboard() {
   // Fetch Payroll Data
   const fetchPayroll = useCallback(() => {
     setLoading(true);
-    axios.get(`http://localhost:5000/api/salary/payroll?month=${period.month}&year=${period.year}`, { headers })
+    api.get(`/api/salary/payroll?month=${period.month}&year=${period.year}`, { headers })
       .then(res => {
         setPayrollData(res.data || []);
         setLoading(false);
@@ -189,7 +189,7 @@ export default function SalaryDashboard() {
   const handleGeneratePayroll = async () => {
     setGeneratingPayroll(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/salary/payroll/generate', {
+      const res = await api.post('/api/salary/payroll/generate', {
         month: period.month,
         year: period.year
       }, { headers });
@@ -208,14 +208,14 @@ export default function SalaryDashboard() {
     setLoading(true);
     let endpoint = '';
     if (complianceType === 'tds') {
-      endpoint = `http://localhost:5000/api/salary/reports/tds?year=${complianceYear}`;
+      endpoint = `/api/salary/reports/tds?year=${complianceYear}`;
     } else if (complianceType === 'pf') {
-      endpoint = `http://localhost:5000/api/salary/reports/pf?month=${period.month}&year=${period.year}`;
+      endpoint = `/api/salary/reports/pf?month=${period.month}&year=${period.year}`;
     } else if (complianceType === 'esic') {
-      endpoint = `http://localhost:5000/api/salary/reports/esic?month=${period.month}&year=${period.year}`;
+      endpoint = `/api/salary/reports/esic?month=${period.month}&year=${period.year}`;
     }
 
-    axios.get(endpoint, { headers })
+    api.get(endpoint, { headers })
       .then(res => {
         setComplianceData(res.data || []);
         setLoading(false);

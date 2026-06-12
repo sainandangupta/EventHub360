@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../api";
 import { Link } from "react-router-dom";
 import { showToast } from "../components/ui";
 
@@ -45,7 +45,7 @@ function Signup() {
     setSuccess("");
 
     try {
-      const signupRes = await axios.post("http://localhost:5000/api/auth/signup", {
+      const signupRes = await api.post("/api/auth/signup", {
         name: form.name,
         email: form.email,
         password: form.password,
@@ -53,7 +53,7 @@ function Signup() {
 
       // Send verification email
       if (signupRes.data.user?.id) {
-        await axios.post("http://localhost:5000/api/email/send-verification", {
+        await api.post("/api/email/send-verification", {
           userId: signupRes.data.user.id,
         }).catch(() => {}); // Don't block on email failure
       }

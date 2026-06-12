@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api';
 import FormTable from '../components/ui/FormTable';
 import FormSelect from '../components/ui/FormSelect';
 
@@ -23,7 +23,7 @@ export default function AssetDetail() {
 
   const fetchDetails = () => {
     setLoading(true);
-    axios.get(`http://localhost:5000/api/assets/${id}`, {
+    api.get(`/api/assets/${id}`, {
       headers: { Authorization: token }
     })
       .then(res => {
@@ -47,8 +47,8 @@ export default function AssetDetail() {
     if (!window.confirm('Are you sure you want to log this asset as returned?')) return;
     setOpLoading(true);
     try {
-      await axios.put(
-        `http://localhost:5000/api/assets/return/${asset.activeAllocation.id}`,
+      await api.put(
+        `/api/assets/return/${asset.activeAllocation.id}`,
         { remarks },
         { headers: { Authorization: token } }
       );
@@ -67,8 +67,8 @@ export default function AssetDetail() {
     if (statusInput === asset.status) return;
     setOpLoading(true);
     try {
-      await axios.put(
-        `http://localhost:5000/api/assets/status/${asset.id}`,
+      await api.put(
+        `/api/assets/status/${asset.id}`,
         { status: statusInput, remarks },
         { headers: { Authorization: token } }
       );
