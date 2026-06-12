@@ -5,6 +5,18 @@
   "outputDirectory": "frontend/build",
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "experimentalServices": {
+    "employee-management-api": {
+      "type": "web",
+      "root": "backend",
+      "entrypoint": "server.js",
+      "routePrefix": "/",
+      "buildCommand": "npm install && npx prisma generate"
+    }
+  }
 }
