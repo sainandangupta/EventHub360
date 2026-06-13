@@ -15,8 +15,23 @@ const logger = require('./utils/logger');
 
 const app = express();
 
+const allowedOrigins = config.frontendUrl
+  ? config.frontendUrl.split(',').map(o => o.trim())
+  : ['http://localhost:3000', 'http://localhost:5173'];
+
 app.use(cors({
-  origin: config.frontendUrl,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const isAllowed = allowedOrigins.some(allowed => allowed === origin) || 
+                      origin.endsWith('.vercel.app') || 
+                      origin.startsWith('http://localhost:') || 
+                      origin.startsWith('http://127.0.0.1:');
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin ${origin} not allowed by CORS`));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
